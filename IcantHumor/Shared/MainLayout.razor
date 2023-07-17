@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+
+<PageTitle>IcantHumor</PageTitle>
+
+<MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true"/>
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="3" Class="d-flex justify-space-between flex-grow-1 gap-4" Style="@($"color:{Colors.DeepPurple.Default}; backdrop-filter: blur(12px); background-color:{Colors.Grey.Darken4};")">
+        <MudText Typo="Typo.h5" Class="ml-3">IcantHumor</MudText>
+        <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Style="@($"color:{Colors.DeepPurple.Default}; background:{Colors.Grey.Darken3};")" Row="true">
+            <MudButton FullWidth="true" Href="/" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">Home</MudButton>
+            <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">Counter</MudButton>
+            <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">FetchData</MudButton>
+        </MudStack>
+        <MudMenu ActivationEvent="@MouseEvent.MouseOver">
+            <ActivatorContent>
+                <MudAvatar>
+                    <MudImage Src=""></MudImage>
+                </MudAvatar>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem>Profile</MudMenuItem>
+                <MudMenuItem>Theme</MudMenuItem>
+                <MudMenuItem>Usage</MudMenuItem>
+                <MudMenuItem>Sign Out</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+    <MudMainContent Class="mt-3">
+        <MudContainer Style="@($"background:{Colors.Grey.Darken4};")" MaxWidth="MaxWidth.ExtraLarge">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    MudTheme MyCustomTheme = new MudTheme()
+        {
+            //Palette = new PaletteLight()
+            //{
+            //    Primary = Colors.Blue.Default,
+            //    Secondary = Colors.Green.Accent4,
+            //    AppbarBackground = Colors.Red.Default,
+            //},
+            PaletteDark = new PaletteDark()
+            {
+                Primary = Colors.Grey.Darken4,
+                Secondary = Colors.DeepPurple.Default
+            },
+        };
+}
