@@ -1,0 +1,84 @@
+﻿@page "/SignUser"
+
+<EditForm Context="RegisterUser" Model="@model" OnValidSubmit="@OnValidLogin">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12" sm="5">
+            <MudCard>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Login</b></MudText>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField Label="Username" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField Label="Password" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                        </MudItem>
+                        @*                        <MudItem xs="12" sm="5">
+                        @if (!string.IsNullOrEmpty(imageBase64))
+                        {
+                        <MudAvatar>
+                        <MudImage Src="@($"data:image/png;base64,{imageBase64}")" Alt="Uploaded Image" />
+                        </MudAvatar>
+                        }
+                        </MudItem>*@
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/RegisterUser" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    private class LoginModel
+    {
+        [Required]
+        public string UserName { get; set; }
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+    }
+
+    private LoginModel model = new();
+
+    private async Task OnValidLogin(EditContext context)
+    {
+        var model = (LoginModel)context.Model;
+
+        var result = await usersService.GetUserByName(model.UserName);
+
+        if (result != null)
+        {
+            var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(new UserViewModel
+                {
+                    UserName = result.UserName,
+                    Role = result.Role
+                });
+            navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            Snackbar.Add("Wrong password or email", Severity.Error);
+        }
+
+    }
+}

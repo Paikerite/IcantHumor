@@ -2,52 +2,101 @@
 
 <PageTitle>IcantHumor</PageTitle>
 
-<MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true"/>
+<MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="3" Class="d-flex justify-space-between flex-grow-1 gap-4" Style="@($"color:{Colors.DeepPurple.Default}; backdrop-filter: blur(12px); background-color:{Colors.Grey.Darken4};")">
-        <MudText Typo="Typo.h5" Class="ml-3">IcantHumor</MudText>
-        <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Style="@($"color:{Colors.DeepPurple.Default}; background:{Colors.Grey.Darken3};")" Row="true">
-            <MudButton FullWidth="true" Href="/" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">Home</MudButton>
-            <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">Counter</MudButton>
-            <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large" Style="@($"color:{Colors.DeepPurple.Lighten2};")">FetchData</MudButton>
+    <MudAppBar Elevation="3" Class="d-flex justify-space-between flex-grow-1 gap-4">
+        <MudStack Class="ml-3" Row="true">
+            <MudImage Class="" Src="/staticimgs/ICANT1x.webp"></MudImage>
+            <MudText Typo="Typo.h5">
+                <b>Humor</b>
+            </MudText>
         </MudStack>
-        <MudMenu ActivationEvent="@MouseEvent.MouseOver">
-            <ActivatorContent>
-                <MudAvatar>
-                    <MudImage Src=""></MudImage>
-                </MudAvatar>
-            </ActivatorContent>
-            <ChildContent>
-                <MudMenuItem>Profile</MudMenuItem>
-                <MudMenuItem>Theme</MudMenuItem>
-                <MudMenuItem>Usage</MudMenuItem>
-                <MudMenuItem>Sign Out</MudMenuItem>
-            </ChildContent>
-        </MudMenu>
+        <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Row="true">
+            <MudButton FullWidth="true" Href="/" Variant="Variant.Text" Size="Size.Large">Home</MudButton>
+            <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large">Counter</MudButton>
+            <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large">FetchData</MudButton>
+        </MudStack>
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu ActivationEvent="@MouseEvent.MouseOver">
+                    <ActivatorContent>
+                        <MudAvatar>
+                            <MudImage Src="@userViewModel.ProfilePicture"></MudImage>
+                        </MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem>Profile</MudMenuItem>
+                        <MudMenuItem OnClick="Logout">Sign Out</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="/SignUser" Variant="Variant.Filled" Color="Color.Primary">Sign in</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
     <MudMainContent Class="mt-3">
-        <MudContainer Style="@($"background:{Colors.Grey.Darken4};")" MaxWidth="MaxWidth.ExtraLarge">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    [Inject]
+    public AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    public NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    public IUsersService usersService { get; set; }
+
+    public UserViewModel userViewModel { get; set; }
+
     MudTheme MyCustomTheme = new MudTheme()
+    {
+        //Palette = new PaletteLight()
+        //{
+        //    Primary = Colors.Blue.Default,
+        //    Secondary = Colors.Green.Accent4,
+        //    AppbarBackground = Colors.Red.Default,
+        //},
+        PaletteDark = new PaletteDark()
         {
-            //Palette = new PaletteLight()
-            //{
-            //    Primary = Colors.Blue.Default,
-            //    Secondary = Colors.Green.Accent4,
-            //    AppbarBackground = Colors.Red.Default,
-            //},
-            PaletteDark = new PaletteDark()
-            {
-                Primary = Colors.Grey.Darken4,
-                Secondary = Colors.DeepPurple.Default
-            },
-        };
+            AppbarText = Colors.DeepPurple.Default,
+            PrimaryLighten = Colors.DeepPurple.Lighten2,
+            PrimaryDarken = Colors.DeepPurple.Darken1,
+            Primary = Colors.DeepPurple.Default,
+            Secondary = Colors.DeepPurple.Default,
+            TextSecondary = Colors.DeepPurple.Lighten5,
+            TextPrimary = Colors.DeepPurple.Lighten4,
+            TextDisabled = Colors.DeepPurple.Darken1,
+            Tertiary = Colors.DeepPurple.Lighten5,
+            //ActionDefault = Colors.DeepPurple.Default,
+            //Surface = Colors.DeepPurple.Default,
+        },
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationState;
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);  
+        }
+    }
+
+    private async Task Logout()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
+        await customAuthStateProvider.Logout();
+        navigationManager.NavigateTo("/", true);
+    }
 }
