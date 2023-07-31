@@ -16,19 +16,18 @@
                         <MudItem xs="12">
                             <MudTextField Label="Password" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                         </MudItem>
-                        @*                        <MudItem xs="12" sm="5">
-                        @if (!string.IsNullOrEmpty(imageBase64))
-                        {
-                        <MudAvatar>
-                        <MudImage Src="@($"data:image/png;base64,{imageBase64}")" Alt="Uploaded Image" />
-                        </MudAvatar>
-                        }
-                        </MudItem>*@
                     </MudGrid>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton Href="/RegisterUser" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+                    @if (isLoading)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                    }
+                    else
+                    {
+                        <MudButton Href="/RegisterUser" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -41,6 +40,9 @@
 
     [Inject]
     private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private ILocalStorageService LocalStorage { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
@@ -59,26 +61,45 @@
 
     private LoginModel model = new();
 
+    private bool isLoading { get; set; } = false;
+
     private async Task OnValidLogin(EditContext context)
     {
         var model = (LoginModel)context.Model;
 
+        isLoading = true;
         var result = await usersService.GetUserByName(model.UserName);
 
         if (result != null)
         {
-            var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
-            await customAuthStateProvider.UpdateAuthenticationState(new UserViewModel
-                {
-                    UserName = result.UserName,
-                    Role = result.Role
-                });
-            navigationManager.NavigateTo("/");
+            //var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
+            //await customAuthStateProvider.UpdateAuthenticationState(new UserViewModel
+            //    {
+            //        UserName = result.UserName,
+            //        Role = result.Role
+            //    });
+            try
+            {
+                var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                    {
+                        Id = result.Id,
+                        Role = result.Role,
+                        UserName = result.UserName,
+                    });
+                await LocalStorage.SetItemAsync("token", JWTToken);
+                await authenticationStateProvider.GetAuthenticationStateAsync();
+                navigationManager.NavigateTo("/");
+            }
+
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            }
         }
         else
         {
             Snackbar.Add("Wrong password or email", Severity.Error);
         }
-
+        isLoading = false;
     }
 }

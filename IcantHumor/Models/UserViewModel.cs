@@ -13,6 +13,7 @@ namespace IcantHumor.Models
         [Required]
         [EmailAddress]
         public string UserEmail { get; set; }
+        public bool ConfirmEmail { get; set; }
         public string? ProfilePicture { get; set; }
         [Required]
         [MinLength(6, ErrorMessage = "Minimum symbols - 6")]

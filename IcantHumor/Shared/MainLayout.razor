@@ -23,8 +23,15 @@
             <Authorized>
                 <MudMenu ActivationEvent="@MouseEvent.MouseOver">
                     <ActivatorContent>
-                        <MudAvatar>
-                            <MudImage Src="@userViewModel.ProfilePicture"></MudImage>
+                        <MudAvatar Color="Color.Primary">
+                            @if (userViewModel == null)
+                            {
+                                <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                            }
+                            else
+                            {
+                                <MudImage Src="@userViewModel.ProfilePicture"></MudImage>
+                            }
                         </MudAvatar>
                     </ActivatorContent>
                     <ChildContent>
@@ -46,28 +53,28 @@
 </MudLayout>
 
 @code {
-    [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
-
-    [Inject]
-    public AuthenticationStateProvider authenticationStateProvider { get; set; }
-
     [Inject]
     public NavigationManager navigationManager { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    //[Inject]
+    //private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
     [Inject]
     public IUsersService usersService { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    [Inject]
+    private ILocalStorageService LocalStorage { get; set; }
 
     public UserViewModel userViewModel { get; set; }
 
     MudTheme MyCustomTheme = new MudTheme()
     {
-        //Palette = new PaletteLight()
-        //{
-        //    Primary = Colors.Blue.Default,
-        //    Secondary = Colors.Green.Accent4,
-        //    AppbarBackground = Colors.Red.Default,
-        //},
         PaletteDark = new PaletteDark()
         {
             AppbarText = Colors.DeepPurple.Default,
@@ -86,17 +93,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await authenticationState;
-        if (authState.User.Identity.IsAuthenticated)
+        try
         {
-            userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);  
+            var authState = await authenticationState;
+            if (authState.User.Identity.IsAuthenticated)
+            {
+                userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);  
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
     }
 
     private async Task Logout()
     {
-        var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
-        await customAuthStateProvider.Logout();
+        //var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
+        //await customAuthStateProvider.Logout();
+        await LocalStorage.RemoveItemAsync("token");
         navigationManager.NavigateTo("/", true);
     }
 }

@@ -53,7 +53,14 @@
                     </MudGrid>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    @if (isLoading)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                    }
+                    else
+                    { 
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -66,6 +73,9 @@
 
     [Inject]
     private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private ILocalStorageService LocalStorage { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
@@ -92,6 +102,8 @@
     }
 
     private RegisterModel model = new();
+
+    private bool isLoading { get; set; } = false;
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
@@ -177,6 +189,7 @@
 
     private async Task OnValidRegister(EditContext context)
     {
+        isLoading = true;
         string urlToFile = null;
         if (ImageFile != null)
         {
@@ -189,19 +202,28 @@
             Role = Models.Enums.Roles.User,
             UserName = model.UserName,
             UserEmail = model.UserEmail,
+            ConfirmEmail = false,
             ProfilePicture = urlToFile,
             Password = model.Password,
         };
 
-        var result = await usersService.PostUser(userViewModel);
-
-        var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
-        await customAuthStateProvider.UpdateAuthenticationState(new UserViewModel
+        try
+        {
+            var result = await usersService.PostUser(userViewModel);
+            var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
             {
+                Id = result.Id,
+                Role = result.Role,
                 UserName = result.UserName,
-                Role = result.Role
             });
-
-        navigationManager.NavigateTo("/");
+            await LocalStorage.SetItemAsync("token", JWTToken);
+            await authenticationStateProvider.GetAuthenticationStateAsync();
+            navigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+        isLoading = false;
     }
 }
