@@ -1,0 +1,106 @@
+﻿@page "/PostDetail/{PostID:guid}"
+
+<PageTitle>Post info</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudGrid>
+        @if (media != null)
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4">@media.Title</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudPaper>
+                    <MudToolBar Class="d-flex justify-space-between">
+                        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
+                        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                        <div>
+                            <MudButton Variant="Variant.Outlined" aria-label="kek">
+                                <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
+                                @media.Like
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" aria-label="cringe">
+                                <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
+                                @media.Dislike
+                            </MudButton>
+                        </div>
+@*                        <MudMenu Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.MoreVert" >
+                            <MudMenuItem Href="@media.UrlToFile">Open media in current tab</MudMenuItem>
+                        </MudMenu>*@
+                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
+                    </MudToolBar>
+                </MudPaper>
+            </MudItem>
+            <MudItem Class="d-flex justify-center" xs="12">
+                <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudChipSet>
+                    @foreach (var item in media.Categories)
+                    {
+                        <MudChip Text="@item.Name"></MudChip>
+                    }
+                </MudChipSet>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    @if (userOfUploader != null)
+                    {
+                        <MudAvatar Color="Color.Primary">
+                            <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
+                        </MudAvatar>
+                        <MudText>
+                            @userOfUploader.UserName
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px"></MudSkeleton>
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="150px"></MudSkeleton>
+                    }
+                </MudStack>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudSkeleton SkeletonType="SkeletonType.Text" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="600px" />
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public Guid PostID { get; set; }
+
+    [Inject]
+    private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private ISnackbar snackbar { get; set; }
+
+    private MediaViewModel media { get; set; }
+
+    private UserViewModel userOfUploader { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            media = await mediaFilesService.GetMediaViewModel(PostID);
+            userOfUploader = await usersService.GetUser(media.IdOfCreator);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+}

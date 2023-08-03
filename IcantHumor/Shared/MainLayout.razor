@@ -23,10 +23,10 @@
             <Authorized>
                 <MudMenu ActivationEvent="@MouseEvent.MouseOver">
                     <ActivatorContent>
-                        <MudAvatar Color="Color.Primary">
+                        <MudAvatar Class="me-3" Color="Color.Primary">
                             @if (userViewModel == null)
                             {
-                                <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                                <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                             }
                             else
                             {

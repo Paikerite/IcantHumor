@@ -15,6 +15,7 @@ namespace IcantHumor.Models
         public int Like { get;set; }
         public int Dislike { get; set; }
         public TypeOfFile TypeOfFile { get; set; }
+        public DateTime DateUpload { get; set; }
 
         public List<CategoryViewModel> Categories { get; set; }
     }

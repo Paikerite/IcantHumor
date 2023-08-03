@@ -17,6 +17,7 @@ builder.Services.AddDbContextPool<IHDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("IcantHumorDBConnection")));
 
 // Add services to the container.
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
 
@@ -42,22 +43,10 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri("https://localhost:7106/")
     //BaseAddress = new Uri(builder..BaseAddress)
 });
-builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IMediaFilesService, MediaFilesService>();
 builder.Services.AddScoped<ICategoriesService, CategoriesService>();
-
-
-//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//    .AddCookie(option =>
-//    {
-//        option.Cookie.HttpOnly = true;
-//        //option.ExpireTimeSpan = TimeSpan.FromMinutes(5);
-//        option.SlidingExpiration = true;
-//        option.LoginPath = new PathString("/User/Login");
-//        option.AccessDeniedPath = new PathString("/User/NotHaveRights");
-//    });
 
 var app = builder.Build();
 
@@ -79,9 +68,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+app.MapControllers();
+
 app.UseRouting();
-//app.UseAuthentication();
-//app.UseAuthorization();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

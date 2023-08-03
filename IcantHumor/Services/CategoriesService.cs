@@ -61,7 +61,7 @@ namespace IcantHumor.Services
 
         public async Task<CategoryViewModel> PostCategory(CategoryViewModel categoryViewModel)
         {
-            var response = await httpClient.PostAsJsonAsync<CategoryViewModel>("api/MediaFiles", categoryViewModel);
+            var response = await httpClient.PostAsJsonAsync<CategoryViewModel>("api/Categories", categoryViewModel);
             if (response.IsSuccessStatusCode)
             {
 
@@ -83,7 +83,7 @@ namespace IcantHumor.Services
             var JsonRequest = JsonConvert.SerializeObject(categoryViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
 
-            var response = await httpClient.PutAsync($"api/MediaFiles/{id}", content);
+            var response = await httpClient.PutAsync($"api/Categories/{id}", content);
             if (response.IsSuccessStatusCode)
             {
 

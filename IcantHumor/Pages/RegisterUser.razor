@@ -12,21 +12,21 @@
                             <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Registration</b></MudText>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Username" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Email" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                         </MudItem>
                         <MudItem xs="12" sm="6">
-                            <MudTextField Label="Password" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                            <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                         </MudItem>
                         <MudItem xs="12" sm="6">
-                            <MudTextField Label="Confirm password" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
+                            <MudTextField Label="Confirm password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png" OnFilesChanged="UploadFile">
                                 <ButtonTemplate>
-                                    <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
+                                    <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
                                         Upload image for avatar
                                     </MudButton>
                                 </ButtonTemplate>
@@ -145,7 +145,7 @@
         }
         else
         {
-            Snackbar.Add($"This file {e.File.Name} size too much, maximum 2 mb", Severity.Error);
+            Snackbar.Add($"This file {e.File.Name} size too much, maximum {maxFileSize} mb", Severity.Error);
         }
         StateHasChanged();
         //TODO upload the files to the server
@@ -218,7 +218,7 @@
             });
             await LocalStorage.SetItemAsync("token", JWTToken);
             await authenticationStateProvider.GetAuthenticationStateAsync();
-            navigationManager.NavigateTo("/");
+            navigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)
         {

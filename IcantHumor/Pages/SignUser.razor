@@ -11,10 +11,10 @@
                             <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Login</b></MudText>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Username" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Password" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                            <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
@@ -88,7 +88,7 @@
                     });
                 await LocalStorage.SetItemAsync("token", JWTToken);
                 await authenticationStateProvider.GetAuthenticationStateAsync();
-                navigationManager.NavigateTo("/");
+                navigationManager.NavigateTo("/", true);
             }
 
             catch (Exception ex)

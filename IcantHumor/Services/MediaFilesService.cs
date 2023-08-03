@@ -102,7 +102,7 @@ namespace IcantHumor.Services
             var JsonRequest = JsonConvert.SerializeObject(mediaViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
 
-            var response = await httpClient.PutAsync($"api/LessonWebAPI/{id}", content);
+            var response = await httpClient.PutAsync($"api/MediaFiles/{id}", content);
             if (response.IsSuccessStatusCode)
             {
 

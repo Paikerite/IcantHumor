@@ -40,7 +40,8 @@ namespace IcantHumor.WebAPI
             {
                 return NotFound();
             }
-            var mediaViewModel = await _context.MediaFiles.FindAsync(id);
+            var mediaViewModel = await _context.MediaFiles.Include(c=>c.Categories)
+                                                          .FirstOrDefaultAsync(m=>m.Id == id);
 
             if (mediaViewModel == null)
             {

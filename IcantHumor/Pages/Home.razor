@@ -1,12 +1,14 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
-
+<PageTitle>Treasure</PageTitle>
 
 <MudPaper Class="mb-3">
     <MudToolBar Class="d-flex justify-space-between flex-grow-1">
-        <MudIconButton Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Outlined.Edit" />
+        <AuthorizeView>
+            <Authorized>
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" Href="/PostAdd" />
+            </Authorized>
+        </AuthorizeView>
         <div class="d-flex flex-grow-1 flex-column align-center">
             <MudPagination ShowFirstButton="true" ShowLastButton="true" Count="4" />
         </div>
@@ -16,29 +18,74 @@
 </MudPaper>
 
 <MudGrid>
-    @for (int i = 0; i < 15; i++)
+    @if (memes == null)
     {
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="border-solid">
-                <MudCardMedia Image="staticimgs/placeholder-image 1.png" Height="200" />
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Old Paint</MudText>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" aria-label="kek">
-                        <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
-                        156
-                    </MudButton>
-                    <MudButton Variant="Variant.Text" aria-label="cringe">
-                        <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
-                        24
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
+        @for (int i = 0; i < 12; i++)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard>
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" />
+                    <MudCardContent>
+                        <MudSkeleton Height="42px;" />
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudSkeleton Width="64px" Height="40px" Class="me-1" />
+                        <MudSkeleton Width="64px" Height="40px" Class="me-1" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+
+    }
+    else
+    {
+        @foreach (var item in memes)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="border-solid">
+                    <MudLink Href="@($"/PostDetail/{item.Id}")" Color="Color.Tertiary" Underline="Underline.None">
+                        @*<MudCardMedia Image="@(item.UrlToFile.Replace(@"\", "/"))"/>*@
+                        <MudCardContent>
+                            <MudImage Fluid="true" Src="@item.UrlToFile"></MudImage>
+                            <MudText Typo="Typo.h6">@item.Title</MudText>
+                        </MudCardContent>
+                    </MudLink>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" aria-label="kek">
+                            <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
+                            @item.Like
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" aria-label="cringe">
+                            <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
+                            @item.Dislike
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
     }
 </MudGrid>
 
 @code {
+    [Inject]
+    private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    private IEnumerable<MediaViewModel> memes { get; set; }
+
     public string SearchText { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            memes = await mediaFilesService.GetMediaFiles();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
 }
