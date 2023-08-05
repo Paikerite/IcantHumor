@@ -28,9 +28,13 @@
                             {
                                 <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                             }
-                            else
+                            else if (userViewModel.ProfilePicture != null)
                             {
                                 <MudImage Src="@userViewModel.ProfilePicture"></MudImage>
+                            }
+                            else
+                            {
+                                @userViewModel.UserName[0]
                             }
                         </MudAvatar>
                     </ActivatorContent>

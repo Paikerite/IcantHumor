@@ -86,6 +86,7 @@
     private class RegisterModel
     {
         [Required]
+        [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
         public string UserName { get; set; }
         [Required]
         [EmailAddress]

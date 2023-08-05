@@ -181,8 +181,9 @@
                     UrlToFile = urlToFile,
                     Like = 0,
                     Dislike = 0,
-                    TypeOfFile = GetTypeOfFile(urlToFile),
+                    TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile),
                     Categories = new(),
+                    DateUpload = DateTime.Now,
                 };
 
             foreach (var item in valuesOfChips)
@@ -209,27 +210,6 @@
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
         isLoading = false;
-    }
-
-    private TypeOfFile GetTypeOfFile(string fileName)
-    {
-        //Accept=".png, .jpg, .jpeg, .gif, .mp4"
-        string Extension = Path.GetExtension(fileName);
-        switch (Extension)
-        {
-            case ".png":
-                return TypeOfFile.Image;
-            case ".jpg":
-                return TypeOfFile.Image;
-            case".jpeg":
-                return TypeOfFile.Image;
-            case ".gif":
-                return TypeOfFile.Gif;
-            case ".mp4":
-                return TypeOfFile.Video;
-            default:
-                throw new Exception("Unknown extension of file");
-        }
     }
 
     private void UploadFile(InputFileChangeEventArgs e)

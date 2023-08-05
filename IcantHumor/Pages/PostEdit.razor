@@ -1,0 +1,47 @@
+﻿@page "/PostEdit/{PostID:guid}"
+@attribute [Authorize]
+
+<PageTitle>Editing post</PageTitle>
+
+
+@code {
+    [Parameter]
+    public Guid PostID { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    [Inject]
+    private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private ISnackbar snackbar { get; set; }
+
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    private MediaViewModel media { get; set; }
+
+    private UserViewModel userOfUploader { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await authenticationState;
+            media = await mediaFilesService.GetMediaViewModel(PostID);
+            userOfUploader = await usersService.GetUser(media.IdOfCreator);
+            if (userOfUploader.UserName != authState.User.Identity.Name)
+            {
+                navigationManager.NavigateTo("/", replace:true);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Error happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+}

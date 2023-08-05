@@ -12,8 +12,15 @@
             <MudItem xs="12">
                 <MudPaper>
                     <MudToolBar Class="d-flex justify-space-between">
-                        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
-                        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                        <AuthorizeView>
+                            <Authorized>
+                                @if (userOfUploader.UserName == authState.User.Identity.Name)
+                                {
+                                    <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
+                                    <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                                }         
+                            </Authorized>
+                        </AuthorizeView>
                         <div>
                             <MudButton Variant="Variant.Outlined" aria-label="kek">
                                 <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
@@ -35,7 +42,7 @@
                 <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
             </MudItem>
             <MudItem xs="12">
-                <MudChipSet>
+                <MudChipSet ReadOnly="false">
                     @foreach (var item in media.Categories)
                     {
                         <MudChip Text="@item.Name"></MudChip>
@@ -78,6 +85,9 @@
     [Parameter]
     public Guid PostID { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
     [Inject]
     private IMediaFilesService mediaFilesService { get; set; }
 
@@ -87,6 +97,8 @@
     [Inject]
     private ISnackbar snackbar { get; set; }
 
+    private AuthenticationState authState { get; set; }
+
     private MediaViewModel media { get; set; }
 
     private UserViewModel userOfUploader { get; set; }
@@ -95,6 +107,7 @@
     {
         try
         {
+            authState = await authenticationState;
             media = await mediaFilesService.GetMediaViewModel(PostID);
             userOfUploader = await usersService.GetUser(media.IdOfCreator);
         }
