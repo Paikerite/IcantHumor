@@ -17,7 +17,7 @@
                                 @if (userOfUploader.UserName == authState.User.Identity.Name)
                                 {
                                     <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
-                                    <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                                    <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
                                 }         
                             </Authorized>
                         </AuthorizeView>
@@ -89,6 +89,12 @@
     private Task<AuthenticationState> authenticationState { get; set; }
 
     [Inject]
+    private IDialogService DialogService { get; set; }
+
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    [Inject]
     private IMediaFilesService mediaFilesService { get; set; }
 
     [Inject]
@@ -114,6 +120,27 @@
         catch (Exception ex)
         {
             snackbar.Add($"Error happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeletePost()
+    {
+        var parameters = new DialogParameters<DialogConfirm>();
+        parameters.Add(x => x.ContentText, "Do you really want to delete this post? This process cannot be undone.");
+        parameters.Add(x => x.ButtonText, "Delete");
+        parameters.Add(x => x.Color, Color.Error);
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DialogConfirm>("Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await mediaFilesService.DeleteMediaViewModel(PostID);
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);
+            System.IO.File.Delete(path);
+            navigationManager.NavigateTo("/", true);
         }
     }
 }

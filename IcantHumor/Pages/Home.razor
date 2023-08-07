@@ -46,7 +46,7 @@
                     <MudLink Href="@($"/PostDetail/{item.Id}")" Color="Color.Tertiary" Underline="Underline.None">
                         @*<MudCardMedia Image="@(item.UrlToFile.Replace(@"\", "/"))"/>*@
                         <MudCardContent>
-                            <MudImage Fluid="true" Src="@item.UrlToFile"></MudImage>
+                            <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
                             <MudText Typo="Typo.h6">@item.Title</MudText>
                         </MudCardContent>
                     </MudLink>

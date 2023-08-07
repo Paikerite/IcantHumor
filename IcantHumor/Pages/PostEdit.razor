@@ -3,6 +3,26 @@
 
 <PageTitle>Editing post</PageTitle>
 
+@if (media != null)
+{
+    <PostEditFormComponent MediaViewModelOld="@media" TypeOperation="CRUD.Put"/>
+}
+else
+{
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12" sm="6">
+            <MudItem xs="12">
+                <MudSkeleton Height="300px" SkeletonType="SkeletonType.Rectangle"/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSkeleton SkeletonType="SkeletonType.Text"/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSkeleton Height="50px" SkeletonType="SkeletonType.Text" />
+            </MudItem>
+        </MudItem>
+    </MudGrid>
+}
 
 @code {
     [Parameter]

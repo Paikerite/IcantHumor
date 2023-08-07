@@ -1,0 +1,326 @@
+﻿<EditForm Context="PostAdd" Model="@model" OnValidSubmit="@OnValidPost">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12" sm="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadFile" For="@(() => model.File)" @bind-Files="model.File" Hidden="false" Class="flex-1" Accept=".png, .jpg, .jpeg, .gif, .mp4" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
+                            @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+                                <ButtonTemplate>
+                                    <MudPaper Outlined="true" Height="300px" Class="@DragClass">
+                                        @if (MediaViewModelOld != null && model.File == null)
+                                        {
+                                            <MudStack AlignItems="AlignItems.Center">
+                                                <MudImage ObjectFit="ObjectFit.Contain" Height="245" Src="@MediaViewModelOld.UrlToFile" />
+                                            </MudStack>
+                                        }
+                                        @if (model.File == null)
+                                        {
+                                            <MudText Align="Align.Center" Typo="Typo.h6">Drag and drop file here or click</MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Align="Align.Center" Typo="Typo.h6">@model.File.Name</MudText>
+                                        }
+                                    </MudPaper>
+                                </ButtonTemplate>
+                            </MudFileUpload>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="model.Title" Counter="50" MaxLength="50" Label="Sample text" Immediate="true" HelperText="Title" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            @*                            <MudSelect @bind-SelectedValues="model.Categories" Variant="Variant.Filled" Label="Categories" MultiSelection="true">
+                            @foreach (var item in categories.Select(n=>n.Name))
+                            {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                            </MudSelect>*@
+                            @*<MudAutocomplete Label="Categories" Variant="Variant.Filled" Margin="Margin.Dense" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />*@
+                            @*<MultiSelectAutoComplete T="CategoryViewModel" @bind-Values="model.Categories" SearchFunc="SearchFunc"></MultiSelectAutoComplete>*@
+                            <MudChipSet AllClosable="true" OnClose="RemoveCategoryChip">
+                                @foreach (var valueOfChip in valuesOfChips)
+                                {
+                                    @*<div class="d-flex">*@
+                                    <MudChip Text="@valueOfChip" Size="Size.Large"></MudChip>
+                                    @*                                            <MudPopover Open="@_isOpen" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.BottomCenter">
+                                <div class="d-flex flex-column pa-1">
+                                <MudAutocomplete SearchFunc="SearchFunc" Variant="Variant.Filled" ShowProgressIndicator="true" ProgressIndicatorColor="Color.Primary"></MudAutocomplete>
+                                </div>
+                                </MudPopover>*@
+                                    @*                                        </div>*@
+                                }
+                            </MudChipSet>
+                            <MudStack AlignItems="AlignItems.Center" Row="true">
+                                <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="CategoryByUser" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
+                                                 ShowProgressIndicator="true" CoerceText="false" ResetValueOnEmptyText="false" CoerceValue="true" MaxLength="25"
+                                                 Required="true" ProgressIndicatorColor="Color.Primary" />
+                                <MudIconButton Variant="Variant.Filled" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    @if (isLoading)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                    }
+                    else
+                    {
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Upload</MudButton>
+                    }
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    [Parameter]
+    public MediaViewModel? MediaViewModelOld { get; set; }
+
+    [Parameter, EditorRequired]
+    public CRUD TypeOperation { get; set; }
+
+    [Inject]
+    private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private ICategoriesService categoriesService { get; set; }
+
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    private IEnumerable<CategoryViewModel> categories { get; set; }
+
+    private class PostAddModel
+    {
+        [Required]
+        [MaxLength(50)]
+        [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
+        public string Title { get; set; }
+        public IBrowserFile File { get; set; }
+        //public IEnumerable<string> Categories { get; set; }
+    }
+
+    private PostAddModel model = new();
+
+    List<string> valuesOfChips = new List<string>();
+
+    public void RemoveCategoryChip(MudChip chip) => valuesOfChips.Remove(chip.Text);
+
+    private int maxFileSize = 1024 * 1024 * 20; // 20MB
+
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
+
+    private string DragClass = DefaultDragClass;
+
+    private bool isLoading { get; set; } = false;
+
+    private string CategoryByUser { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            if (TypeOperation is CRUD.Put && MediaViewModelOld == null)
+            {
+                throw new Exception("If you chose Put operation, you must assign old MediaViewModel");
+            }
+            if (MediaViewModelOld != null)
+            {
+                model.Title = MediaViewModelOld.Title;
+                valuesOfChips = MediaViewModelOld.Categories.Select(n => n.Name).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public async Task<IEnumerable<string>> SearchFunc(string search)
+    {
+        categories = await categoriesService.GetCategories();
+        if (string.IsNullOrEmpty(search))
+        {
+            return categories.Select(n => n.Name);
+        }
+        return await Task.FromResult(categories
+            .Select(n => n.Name)
+            .Where(x => x.Contains(search, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void AddCategoryChip()
+    {
+        if (!valuesOfChips.Contains(CategoryByUser))
+        {
+            valuesOfChips.Add(CategoryByUser.ToLower());
+        }
+        else
+        {
+            Snackbar.Add("Category has already chosen", Severity.Warning);
+        }
+    }
+
+    private async Task OnValidPost()
+    {
+        isLoading = true;
+        string urlToFile;
+
+        try
+        {
+            if (model.File != null)
+            {
+                if (TypeOperation is CRUD.Put)
+                {
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", MediaViewModelOld.UrlToFile);
+                    System.IO.File.Delete(path);
+                }
+                urlToFile = await CaptureFile();
+            }
+            else if (TypeOperation is CRUD.Put)
+            {
+                urlToFile = MediaViewModelOld.UrlToFile;
+            }
+            else
+            {
+                Snackbar.Add("Upload something", Severity.Warning);
+                return;
+            }
+            var authState = await authenticationState;
+            var user = await usersService.GetUserByName(authState.User.Identity.Name);
+            categories = await categoriesService.GetCategories();
+
+            MediaViewModel mediaViewModel = new();
+
+            if (TypeOperation is CRUD.Put)
+            {
+                mediaViewModel.Id = MediaViewModelOld.Id;
+                mediaViewModel.IdOfCreator = MediaViewModelOld.IdOfCreator;
+                mediaViewModel.Title = model.Title;
+                mediaViewModel.UrlToFile = urlToFile;
+                mediaViewModel.Like = MediaViewModelOld.Like;
+                mediaViewModel.Dislike = MediaViewModelOld.Dislike;
+                mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
+                mediaViewModel.Categories = new();
+                mediaViewModel.DateUpload = MediaViewModelOld.DateUpload;
+
+            }
+            else if (TypeOperation is CRUD.Post)
+            {
+
+                mediaViewModel.IdOfCreator = user.Id;
+                mediaViewModel.Title = model.Title;
+                mediaViewModel.UrlToFile = urlToFile;
+                mediaViewModel.Like = 0;
+                mediaViewModel.Dislike = 0;
+                mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
+                mediaViewModel.Categories = new();
+                mediaViewModel.DateUpload = DateTime.Now;
+
+            }
+
+            foreach (var item in valuesOfChips)
+            {
+                var categoryModel = new CategoryViewModel()
+                    {
+                        Name = item,
+                    };
+
+                if (!categories.Select(n => n.Name)
+                               .Contains(item))
+                {
+                    await categoriesService.PostCategory(categoryModel);
+                }
+
+                mediaViewModel.Categories.Add(categoryModel);
+            }
+
+            if (TypeOperation is CRUD.Post)
+            {
+                await mediaFilesService.PostMediaViewModel(mediaViewModel);
+            }
+            else if (TypeOperation is CRUD.Put)
+            {
+                await mediaFilesService.PutMediaViewModel(mediaViewModel.Id, mediaViewModel);
+            }
+            navigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+        isLoading = false;
+    }
+
+    private void UploadFile(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size <= maxFileSize)
+        {
+            model.File = e.File;
+            Snackbar.Add($"This file {e.File.Name} has upload succesfully");
+        }
+        else
+        {
+            Snackbar.Add($"This file {e.File.Name} size too much, maximum {maxFileSize} mb", Severity.Error);
+        }
+        StateHasChanged();
+    }
+
+    private async Task<string> CaptureFile()
+    {
+        if (model.File == null)
+        {
+            return null;
+        }
+        try
+        {
+            //ImageFiles.Clear();
+            // e.GetMultipleFiles(maxAllowedFiles) for several files
+            string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
+                                                      Path.GetExtension(model.File.Name));
+
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "PostResources");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            string absolutePath = Path.Combine(path, newFileName);
+            string relativePath = Path.Combine("PostResources", newFileName);
+
+
+            await using FileStream fs = new(absolutePath, FileMode.Create);
+            await model.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
+
+            return relativePath;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            return null;
+        }
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+}
