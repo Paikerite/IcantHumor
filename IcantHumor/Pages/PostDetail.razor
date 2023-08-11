@@ -54,7 +54,14 @@
                     @if (userOfUploader != null)
                     {
                         <MudAvatar Color="Color.Primary">
-                            <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
+                            @if (userOfUploader.ProfilePicture != null)
+                            {
+                                <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
+                            }
+                            else
+                            {
+                                @userOfUploader.UserName[0]
+                            }
                         </MudAvatar>
                         <MudText>
                             @userOfUploader.UserName

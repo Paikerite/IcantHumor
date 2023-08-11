@@ -8,5 +8,7 @@ namespace IcantHumor.Models
         public Guid Id { get; set; }
         [Required]
         public string Name { get; set; }
+
+        public List<MediaViewModel> Posts { get; set; } = new();
     }
 }

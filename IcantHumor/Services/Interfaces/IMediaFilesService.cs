@@ -11,5 +11,6 @@ namespace IcantHumor.Services.Interfaces
         Task<MediaViewModel> PostMediaViewModel(MediaViewModel mediaViewModel);
         Task<MediaViewModel> DeleteMediaViewModel(Guid id);
         Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategory(Guid categoryId);
+        Task<MediaViewModel> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds);
     }
 }

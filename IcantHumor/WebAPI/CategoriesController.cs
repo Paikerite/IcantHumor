@@ -50,6 +50,24 @@ namespace IcantHumor.WebAPI
             return Ok(categoryViewModel);
         }
 
+        //GET: api/Categories/VideoGame
+        [HttpGet("GetCategoryByName/{name}")]
+        public async Task<ActionResult<CategoryViewModel>> GetCategoryViewModelByName(string name)
+        {
+            if (_context.Categories == null)
+            {
+                return NotFound();
+            }
+            var categoryViewModel = await _context.Categories.FirstOrDefaultAsync(x => x.Name == name);
+
+            if (categoryViewModel == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(categoryViewModel);
+        }
+
         // PUT: api/Categories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]

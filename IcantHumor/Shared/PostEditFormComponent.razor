@@ -29,7 +29,7 @@
                             </MudFileUpload>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="model.Title" Counter="50" MaxLength="50" Label="Sample text" Immediate="true" HelperText="Title" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+                            <MudTextField @bind-Value="model.Title" Counter="50" MaxLength="50" Immediate="true" HelperText="Title" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
                             @*                            <MudSelect @bind-SelectedValues="model.Categories" Variant="Variant.Filled" Label="Categories" MultiSelection="true">
@@ -44,7 +44,7 @@
                                 @foreach (var valueOfChip in valuesOfChips)
                                 {
                                     @*<div class="d-flex">*@
-                                    <MudChip Text="@valueOfChip" Size="Size.Large"></MudChip>
+                                    <MudChip Text="@valueOfChip.Name" Size="Size.Large"></MudChip>
                                     @*                                            <MudPopover Open="@_isOpen" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.BottomCenter">
                                 <div class="d-flex flex-column pa-1">
                                 <MudAutocomplete SearchFunc="SearchFunc" Variant="Variant.Filled" ShowProgressIndicator="true" ProgressIndicatorColor="Color.Primary"></MudAutocomplete>
@@ -57,7 +57,7 @@
                                 <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="CategoryByUser" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
                                                  ShowProgressIndicator="true" CoerceText="false" ResetValueOnEmptyText="false" CoerceValue="true" MaxLength="25"
                                                  Required="true" ProgressIndicatorColor="Color.Primary" />
-                                <MudIconButton Variant="Variant.Filled" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
+                                <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
                             </MudStack>
                         </MudItem>
                     </MudGrid>
@@ -116,9 +116,9 @@
 
     private PostAddModel model = new();
 
-    List<string> valuesOfChips = new List<string>();
+    List<CategoryViewModel> valuesOfChips = new List<CategoryViewModel>();
 
-    public void RemoveCategoryChip(MudChip chip) => valuesOfChips.Remove(chip.Text);
+    public void RemoveCategoryChip(MudChip chip) => valuesOfChips.Remove(valuesOfChips.First(v=>v.Name == chip.Text));
 
     private int maxFileSize = 1024 * 1024 * 20; // 20MB
 
@@ -141,7 +141,8 @@
             if (MediaViewModelOld != null)
             {
                 model.Title = MediaViewModelOld.Title;
-                valuesOfChips = MediaViewModelOld.Categories.Select(n => n.Name).ToList();
+                //valuesOfChips = MediaViewModelOld.Categories.Select(n => n.Name).ToList();
+                valuesOfChips = MediaViewModelOld.Categories;
             }
         }
         catch (Exception ex)
@@ -162,11 +163,20 @@
             .Where(x => x.Contains(search, StringComparison.OrdinalIgnoreCase)));
     }
 
-    private void AddCategoryChip()
+    private async Task AddCategoryChip()
     {
-        if (!valuesOfChips.Contains(CategoryByUser))
+        if (!valuesOfChips.Any(v=>v.Name == CategoryByUser))
         {
-            valuesOfChips.Add(CategoryByUser.ToLower());
+            //valuesOfChips.Add(new() { Name = CategoryByUser.ToLower() });
+            var result = await categoriesService.GetCategoryByName(CategoryByUser);
+            if (result != null)
+            {
+                valuesOfChips.Add(result);
+            }
+            else
+            {
+                valuesOfChips.Add(new() { Name = CategoryByUser.ToLower() });
+            }
         }
         else
         {
@@ -201,7 +211,6 @@
             }
             var authState = await authenticationState;
             var user = await usersService.GetUserByName(authState.User.Identity.Name);
-            categories = await categoriesService.GetCategories();
 
             MediaViewModel mediaViewModel = new();
 
@@ -214,48 +223,63 @@
                 mediaViewModel.Like = MediaViewModelOld.Like;
                 mediaViewModel.Dislike = MediaViewModelOld.Dislike;
                 mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
-                mediaViewModel.Categories = new();
                 mediaViewModel.DateUpload = MediaViewModelOld.DateUpload;
 
             }
             else if (TypeOperation is CRUD.Post)
             {
-
                 mediaViewModel.IdOfCreator = user.Id;
                 mediaViewModel.Title = model.Title;
                 mediaViewModel.UrlToFile = urlToFile;
                 mediaViewModel.Like = 0;
                 mediaViewModel.Dislike = 0;
                 mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
-                mediaViewModel.Categories = new();
                 mediaViewModel.DateUpload = DateTime.Now;
-
             }
 
+            categories = await categoriesService.GetCategories();
+            List<Guid> categoriesIdToAdd = new();
             foreach (var item in valuesOfChips)
             {
-                var categoryModel = new CategoryViewModel()
-                    {
-                        Name = item,
-                    };
+                //CategoryViewModel categoryFromDB = new() { Name = item };
 
-                if (!categories.Select(n => n.Name)
-                               .Contains(item))
+                //if (!categories.Select(n => n.Name)
+                //               .Contains(item))
+                //{
+                //    categoryFromDB = await categoriesService.PostCategory(new() { Name = item });
+                //}
+                if (!categories.Any(c=>c.Name == item.Name))
                 {
-                    await categoriesService.PostCategory(categoryModel);
+                    var res = await categoriesService.PostCategory(item);
+                    categoriesIdToAdd.Add(res.Id);
                 }
+                else
+                {
+                    categoriesIdToAdd.Add(item.Id);
+                }
+                //else
+                //{
+                //    categoryFromDB = await categoriesService.GetCategoryByName(item);
+                //}
 
-                mediaViewModel.Categories.Add(categoryModel);
             }
+
+            MediaViewModel postResult = null;
 
             if (TypeOperation is CRUD.Post)
             {
-                await mediaFilesService.PostMediaViewModel(mediaViewModel);
+                postResult = await mediaFilesService.PostMediaViewModel(mediaViewModel);
             }
             else if (TypeOperation is CRUD.Put)
             {
-                await mediaFilesService.PutMediaViewModel(mediaViewModel.Id, mediaViewModel);
+                postResult = await mediaFilesService.PutMediaViewModel(mediaViewModel.Id, mediaViewModel);
             }
+
+            if (postResult != null)
+            {
+                await mediaFilesService.PatchCategoryInPost(postResult.Id, categoriesIdToAdd);
+            }
+
             navigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)

@@ -17,5 +17,6 @@ namespace IcantHumor.Data
         public DbSet<CategoryViewModel> Categories { get; set; }
         public DbSet<UserViewModel> Users { get; set; }
         public DbSet<MediaViewModel> MediaFiles { get; set; }
+        public DbSet<ReactedUserViewModel> ReactedUsers { get; set; }
     }
 }

@@ -78,6 +78,27 @@ namespace IcantHumor.Services
             }
         }
 
+        public async Task<MediaViewModel> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds)
+        {
+            var JsonRequest = JsonConvert.SerializeObject(categoriesIds);
+            var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
+
+            var response = await httpClient.PatchAsync($"api/MediaFiles/PatchCategoryInPost/{idPost}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<MediaViewModel>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                return default(MediaViewModel);
+            }
+            else
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{response.StatusCode}, message:{message}");
+            }
+        }
+
         public async Task<MediaViewModel> PostMediaViewModel(MediaViewModel mediaViewModel)
         {
             var response = await httpClient.PostAsJsonAsync<MediaViewModel>("api/MediaFiles", mediaViewModel);

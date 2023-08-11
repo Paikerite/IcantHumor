@@ -51,7 +51,7 @@ namespace IcantHumor.WebAPI
             return Ok(mediaViewModel);
         }
 
-        // GET: api/GetMediaFilesByCategories/5
+        // GET: api/MediaFiles/GetMediaFilesByCategories/5
         [HttpGet("GetMediaFilesByCategories/{id}")]
         public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByCategories(Guid id)
         {
@@ -65,6 +65,45 @@ namespace IcantHumor.WebAPI
                 .ToListAsync();
 
             return Ok(mediaFiles);
+        }
+
+        // PATCH: api/MediaFiles/PatchCategoryInPost
+        [HttpPatch("PatchCategoryInPost/{idPost}")]
+        public async Task<ActionResult<MediaViewModel>> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds)
+        {
+            if (categoriesIds == null)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                var post = await _context.MediaFiles
+                    .Include(c => c.Categories)
+                    .FirstOrDefaultAsync(u => u.Id == idPost);
+
+                if (post == null)
+                {
+                    return NotFound();
+                }
+
+                var categories = await _context.Categories.Where(x => categoriesIds.Any(y => y == x.Id)).ToListAsync();
+
+                if (categories == null)
+                {
+                    return NotFound();
+                }
+
+                post.Categories = categories;
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetMediaViewModel), new { id = post.Id }, post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Error retrieving data from the database: {e}");
+            }
         }
 
         // PUT: api/MediaFiles/5

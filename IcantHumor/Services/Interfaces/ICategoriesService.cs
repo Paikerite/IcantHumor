@@ -6,6 +6,7 @@ namespace IcantHumor.Services.Interfaces
     {
         Task<IEnumerable<CategoryViewModel>> GetCategories();
         Task<CategoryViewModel> GetCategory(Guid id);
+        Task<CategoryViewModel> GetCategoryByName(string name);
         Task<CategoryViewModel> PutCategory(Guid id, CategoryViewModel categoryViewModel);
         Task<CategoryViewModel> PostCategory(CategoryViewModel categoryViewModel);
         Task<CategoryViewModel> DeleteCategory(Guid id);
