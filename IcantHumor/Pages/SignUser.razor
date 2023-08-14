@@ -42,6 +42,9 @@
     private AuthenticationStateProvider authenticationStateProvider { get; set; }
 
     [Inject]
+    private ProtectedLocalStorage protectedLocalStorage { get; set; }
+
+    [Inject]
     private ILocalStorageService LocalStorage { get; set; }
 
     [Inject]

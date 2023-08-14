@@ -53,6 +53,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IMediaFilesService, MediaFilesService>();
 builder.Services.AddScoped<ICategoriesService, CategoriesService>();
+builder.Services.AddScoped<IReactedUserService, ReactedUserService>();
 
 var app = builder.Build();
 

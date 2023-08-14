@@ -32,25 +32,10 @@
                             <MudTextField @bind-Value="model.Title" Counter="50" MaxLength="50" Immediate="true" HelperText="Title" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
-                            @*                            <MudSelect @bind-SelectedValues="model.Categories" Variant="Variant.Filled" Label="Categories" MultiSelection="true">
-                            @foreach (var item in categories.Select(n=>n.Name))
-                            {
-                            <MudSelectItem Value="@item">@item</MudSelectItem>
-                            }
-                            </MudSelect>*@
-                            @*<MudAutocomplete Label="Categories" Variant="Variant.Filled" Margin="Margin.Dense" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />*@
-                            @*<MultiSelectAutoComplete T="CategoryViewModel" @bind-Values="model.Categories" SearchFunc="SearchFunc"></MultiSelectAutoComplete>*@
                             <MudChipSet AllClosable="true" OnClose="RemoveCategoryChip">
                                 @foreach (var valueOfChip in valuesOfChips)
                                 {
-                                    @*<div class="d-flex">*@
                                     <MudChip Text="@valueOfChip.Name" Size="Size.Large"></MudChip>
-                                    @*                                            <MudPopover Open="@_isOpen" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.BottomCenter">
-                                <div class="d-flex flex-column pa-1">
-                                <MudAutocomplete SearchFunc="SearchFunc" Variant="Variant.Filled" ShowProgressIndicator="true" ProgressIndicatorColor="Color.Primary"></MudAutocomplete>
-                                </div>
-                                </MudPopover>*@
-                                    @*                                        </div>*@
                                 }
                             </MudChipSet>
                             <MudStack AlignItems="AlignItems.Center" Row="true">
@@ -220,19 +205,16 @@
                 mediaViewModel.IdOfCreator = MediaViewModelOld.IdOfCreator;
                 mediaViewModel.Title = model.Title;
                 mediaViewModel.UrlToFile = urlToFile;
-                mediaViewModel.Like = MediaViewModelOld.Like;
-                mediaViewModel.Dislike = MediaViewModelOld.Dislike;
                 mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
                 mediaViewModel.DateUpload = MediaViewModelOld.DateUpload;
-
+                mediaViewModel.WhoReacted = MediaViewModelOld.WhoReacted;
             }
+
             else if (TypeOperation is CRUD.Post)
             {
                 mediaViewModel.IdOfCreator = user.Id;
                 mediaViewModel.Title = model.Title;
                 mediaViewModel.UrlToFile = urlToFile;
-                mediaViewModel.Like = 0;
-                mediaViewModel.Dislike = 0;
                 mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
                 mediaViewModel.DateUpload = DateTime.Now;
             }
@@ -241,13 +223,6 @@
             List<Guid> categoriesIdToAdd = new();
             foreach (var item in valuesOfChips)
             {
-                //CategoryViewModel categoryFromDB = new() { Name = item };
-
-                //if (!categories.Select(n => n.Name)
-                //               .Contains(item))
-                //{
-                //    categoryFromDB = await categoriesService.PostCategory(new() { Name = item });
-                //}
                 if (!categories.Any(c=>c.Name == item.Name))
                 {
                     var res = await categoriesService.PostCategory(item);
@@ -257,11 +232,6 @@
                 {
                     categoriesIdToAdd.Add(item.Id);
                 }
-                //else
-                //{
-                //    categoryFromDB = await categoriesService.GetCategoryByName(item);
-                //}
-
             }
 
             MediaViewModel postResult = null;
@@ -279,6 +249,11 @@
             {
                 await mediaFilesService.PatchCategoryInPost(postResult.Id, categoriesIdToAdd);
             }
+
+            //foreach (var item in MediaViewModelOld.Categories.Where(c => c.Posts.Count() == 0))
+            //{
+            //    await categoriesService.DeleteCategory(item.Id);
+            //}
 
             navigationManager.NavigateTo("/", true);
         }

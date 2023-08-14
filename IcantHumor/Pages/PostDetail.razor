@@ -16,24 +16,25 @@
                             <Authorized>
                                 @if (userOfUploader.UserName == authState.User.Identity.Name)
                                 {
-                                    <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
-                                    <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                                    <MudTooltip Text="Edit" Placement="Placement.Top">
+                                        <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Delete" Placement="Placement.Top">
+                                        <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
+                                    </MudTooltip>
                                 }         
                             </Authorized>
                         </AuthorizeView>
                         <div>
-                            <MudButton Variant="Variant.Outlined" aria-label="kek">
+                            <MudButton @onclick="()=>PutReact(React.Like)" Variant="Variant.Outlined" aria-label="kek">
                                 <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
                                 @media.Like
                             </MudButton>
-                            <MudButton Variant="Variant.Outlined" aria-label="cringe">
+                            <MudButton @onclick="()=>PutReact(React.Dislike)" Variant="Variant.Outlined" aria-label="cringe">
                                 <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
                                 @media.Dislike
                             </MudButton>
                         </div>
-@*                        <MudMenu Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Outlined.MoreVert" >
-                            <MudMenuItem Href="@media.UrlToFile">Open media in current tab</MudMenuItem>
-                        </MudMenu>*@
                         <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
                     </MudToolBar>
                 </MudPaper>
@@ -105,6 +106,12 @@
     private IMediaFilesService mediaFilesService { get; set; }
 
     [Inject]
+    private ICategoriesService categoriesService { get; set; }
+
+    [Inject]
+    private IReactedUserService reactedUserService { get; set; }
+
+    [Inject]
     private IUsersService usersService { get; set; }
 
     [Inject]
@@ -130,6 +137,46 @@
         }
     }
 
+    private async Task PutReact(React reaction)
+    {
+        try
+        {
+            var user = await usersService.GetUserByName(authState.User.Identity.Name);
+            if (authState.User.Identity.IsAuthenticated)
+            {
+                if (!media.WhoReacted.Any(w => w.IdReactedUser == user.Id))
+                {
+                    var changePost = await mediaFilesService.MakeReactionInPost(media.Id, new ReactedUserViewModel
+                        {
+                            IdReactedUser = user.Id,
+                            ChosenReact = reaction,
+                        });
+
+                    media.WhoReacted = changePost.WhoReacted;
+                }
+                else
+                {
+                    var whoReacted = media.WhoReacted.First(w => w.IdReactedUser == user.Id);
+                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
+
+                    //memes.First(m => m.Id == guidPost).WhoReacted
+                    //    .Remove(memes
+                    //        .First(m => m.Id == guidPost).WhoReacted
+                    //        .First(a => a.Id == whoReacted.Id));
+                    media.WhoReacted.Remove(media.WhoReacted.First(r=>r.Id == whoReacted.Id));
+                }
+            }
+            else
+            {
+                navigationManager.NavigateTo("/SignUser", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message[80]}", Severity.Error);
+        }
+    }
+
     private async Task DeletePost()
     {
         var parameters = new DialogParameters<DialogConfirm>();
@@ -144,9 +191,13 @@
 
         if (!result.Canceled)
         {
-            await mediaFilesService.DeleteMediaViewModel(PostID);
+            var delepost = await mediaFilesService.DeleteMediaViewModel(PostID);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);
             System.IO.File.Delete(path);
+            foreach (var item in delepost.Categories.Where(c=>c.Posts.Count()==0))
+            {
+                await categoriesService.DeleteCategory(item.Id);
+            }
             navigationManager.NavigateTo("/", true);
         }
     }

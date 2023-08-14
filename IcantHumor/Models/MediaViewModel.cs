@@ -1,5 +1,6 @@
 ﻿using IcantHumor.Models.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IcantHumor.Models
 {
@@ -12,14 +13,27 @@ namespace IcantHumor.Models
         public string Title { get; set; }
         [Required]
         public string UrlToFile { get; set; }
-        public int Like { get; set; }
-        public int Dislike { get; set; }
+        //Put like or dislike
+        public int Like
+        {
+            get
+            {
+                return WhoReacted.Where(w => w.ChosenReact == React.Like).Count();
+            }
+        }
+        public int Dislike 
+        {
+            get
+            {
+                return WhoReacted.Where(w => w.ChosenReact == React.Dislike).Count();
+            }
+        }
         public TypeOfFile TypeOfFile { get; set; }
         public DateTime DateUpload { get; set; }
-
         public List<CategoryViewModel> Categories { get; set; } = new();
-
-        //Put like or dislike
         public List<ReactedUserViewModel> WhoReacted { get; set; } = new();
+
+        //[ForeignKey("IdOfCreator")]
+        //public UserViewModel UserCreator { get; set; }
     }
 }

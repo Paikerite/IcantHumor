@@ -4,6 +4,7 @@ using IcantHumor.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IcantHumor.Migrations
 {
     [DbContext(typeof(IHDbContext))]
-    partial class IHDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230811173651_AddedReactedUsers")]
+    partial class AddedReactedUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace IcantHumor.Migrations
 
                     b.HasIndex("PostsId");
 
-                    b.ToTable("CategoryViewModelMediaViewModel", (string)null);
+                    b.ToTable("CategoryViewModelMediaViewModel");
                 });
 
             modelBuilder.Entity("IcantHumor.Models.CategoryViewModel", b =>
@@ -49,7 +52,7 @@ namespace IcantHumor.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("IcantHumor.Models.MediaViewModel", b =>
@@ -83,7 +86,7 @@ namespace IcantHumor.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MediaFiles", (string)null);
+                    b.ToTable("MediaFiles");
                 });
 
             modelBuilder.Entity("IcantHumor.Models.ReactedUserViewModel", b =>
@@ -105,7 +108,7 @@ namespace IcantHumor.Migrations
 
                     b.HasIndex("MediaViewModelId");
 
-                    b.ToTable("ReactedUsers", (string)null);
+                    b.ToTable("ReactedUsers");
                 });
 
             modelBuilder.Entity("IcantHumor.Models.UserViewModel", b =>
@@ -137,7 +140,7 @@ namespace IcantHumor.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("CategoryViewModelMediaViewModel", b =>

@@ -2,7 +2,7 @@
 {
     public enum TypeOfFile
     {
-        Image,
+        Img,
         Gif,
         Video
     }

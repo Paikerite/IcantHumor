@@ -11,11 +11,11 @@ namespace IcantHumor.Data
             switch (Extension)
             {
                 case ".png":
-                    return TypeOfFile.Image;
+                    return TypeOfFile.Img;
                 case ".jpg":
-                    return TypeOfFile.Image;
+                    return TypeOfFile.Img;
                 case ".jpeg":
-                    return TypeOfFile.Image;
+                    return TypeOfFile.Img;
                 case ".gif":
                     return TypeOfFile.Gif;
                 case ".mp4":

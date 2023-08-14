@@ -29,7 +29,8 @@ namespace IcantHumor.WebAPI
             {
                 return NotFound();
             }
-            return Ok(await _context.MediaFiles.ToListAsync());
+            return Ok(await _context.MediaFiles.Include(r => r.WhoReacted).ToListAsync());
+            //return Ok(await _context.MediaFiles.ToListAsync());
         }
 
         // GET: api/MediaFiles/5
@@ -40,7 +41,8 @@ namespace IcantHumor.WebAPI
             {
                 return NotFound();
             }
-            var mediaViewModel = await _context.MediaFiles.Include(c=>c.Categories)
+            var mediaViewModel = await _context.MediaFiles.Include(c=>c.Categories).ThenInclude(p=>p.Posts)
+                                                          .Include(r=>r.WhoReacted)
                                                           .FirstOrDefaultAsync(m=>m.Id == id);
 
             if (mediaViewModel == null)
@@ -67,7 +69,7 @@ namespace IcantHumor.WebAPI
             return Ok(mediaFiles);
         }
 
-        // PATCH: api/MediaFiles/PatchCategoryInPost
+        // PATCH: api/MediaFiles/PatchCategoryInPost/5
         [HttpPatch("PatchCategoryInPost/{idPost}")]
         public async Task<ActionResult<MediaViewModel>> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds)
         {
@@ -106,6 +108,74 @@ namespace IcantHumor.WebAPI
             }
         }
 
+        // PATCH: api/MediaFiles/MakeReactionInPost/7
+        [HttpPatch("MakeReactionInPost/{idPost}")]
+        public async Task<ActionResult<MediaViewModel>> MakeReactionInPost(Guid idPost, ReactedUserViewModel reactedUser)
+        {
+            if (reactedUser == null)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                var post = await _context.MediaFiles
+                    .Include(c => c.WhoReacted)
+                    .FirstOrDefaultAsync(u => u.Id == idPost);
+
+                if (post == null)
+                {
+                    return NotFound();
+                }
+
+                post.WhoReacted.Add(reactedUser);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetMediaViewModel), new { id = post.Id }, post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Error retrieving data from the database: {e}");
+            }
+        }
+
+        // PATCH: api/MediaFiles/UnMakeReactionInPost/7
+        [HttpPatch("UnMakeReactionInPost/{idPost}")]
+        public async Task<ActionResult<MediaViewModel>> UnMakeReactionInPost(Guid idPost, Guid reactedUserId)
+        {
+            if (reactedUserId == null)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                var post = await _context.MediaFiles
+                    .Include(c => c.WhoReacted)
+                    .FirstOrDefaultAsync(u => u.Id == idPost);
+
+                if (post == null)
+                {
+                    return NotFound();
+                }
+
+                var reac = post.WhoReacted.FirstOrDefault(i=>i.Id == reactedUserId);
+                if (reac !=null)
+                {
+                    post.WhoReacted.Remove(reac);
+                }
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetMediaViewModel), new { id = post.Id }, post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Error retrieving data from the database: {e}");
+            }
+        }
+
         // PUT: api/MediaFiles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -117,6 +187,7 @@ namespace IcantHumor.WebAPI
             }
 
             _context.Entry(mediaViewModel).State = EntityState.Modified;
+            //_context.Update(mediaViewModel);
 
             try
             {
@@ -160,7 +231,9 @@ namespace IcantHumor.WebAPI
             {
                 return NotFound();
             }
-            var mediaViewModel = await _context.MediaFiles.FindAsync(id);
+            var mediaViewModel = await _context.MediaFiles.Include(c => c.Categories).ThenInclude(p=>p.Posts)
+                                                          .Include(r => r.WhoReacted)
+                                                          .FirstOrDefaultAsync(m => m.Id == id);
             if (mediaViewModel == null)
             {
                 return NotFound();

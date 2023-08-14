@@ -12,7 +12,7 @@
         <div class="d-flex flex-grow-1 flex-column align-center">
             <MudPagination ShowFirstButton="true" ShowLastButton="true" Count="4" />
         </div>
-        <MudTextField @bind-Value="SearchText" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
+        <MudTextField @bind-Value="SearchText" @bind-Value:after="PerformSearch" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
         <MudIconButton Class="ml-1" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" />
     </MudToolBar>
 </MudPaper>
@@ -46,16 +46,18 @@
                     <MudLink Href="@($"/PostDetail/{item.Id}")" Color="Color.Tertiary" Underline="Underline.None">
                         @*<MudCardMedia Image="@(item.UrlToFile.Replace(@"\", "/"))"/>*@
                         <MudCardContent>
-                            <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
-                            <MudText Typo="Typo.h6">@item.Title</MudText>
+                            <MudBadge Content="item.TypeOfFile.ToString()" Color="Color.Primary" Overlap="true">
+                                <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
+                                <MudText Typo="Typo.h6">@item.Title</MudText>
+                            </MudBadge>
                         </MudCardContent>
                     </MudLink>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" aria-label="kek">
+                        <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
                             <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
                             @item.Like
                         </MudButton>
-                        <MudButton Variant="Variant.Text" aria-label="cringe">
+                        <MudButton @onclick="()=>PutReact(React.Dislike, item.Id)" Variant="Variant.Text" aria-label="cringe">
                             <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
                             @item.Dislike
                         </MudButton>
@@ -67,21 +69,98 @@
 </MudGrid>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
     [Inject]
     private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private IReactedUserService reactedUserService { get; set; }
+
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
 
     private IEnumerable<MediaViewModel> memes { get; set; }
+    private UserViewModel user { get; set; }
 
     public string SearchText { get; set; }
+
+    private AuthenticationState authState { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             memes = await mediaFilesService.GetMediaFiles();
+            authState = await authenticationState;
+            user = await usersService.GetUserByName(authState.User.Identity.Name);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PutReact(React reaction, Guid guidPost)
+    {
+        try
+        {
+            if (authState.User.Identity.IsAuthenticated)
+            {
+                var post = await mediaFilesService.GetMediaViewModel(guidPost);
+                if (!post.WhoReacted.Any(w => w.IdReactedUser == user.Id))
+                {
+                    //post.WhoReacted.Add(new ReactedUserViewModel
+                    //{
+                    //    IdReactedUser = user.Id,
+                    //    ChosenReact = reaction,
+                    //});
+                    var changePost = await mediaFilesService.MakeReactionInPost(post.Id, new ReactedUserViewModel
+                        {
+                            IdReactedUser = user.Id,
+                            ChosenReact = reaction,
+                        });
+
+                    memes.First(m => m.Id == guidPost).WhoReacted = changePost.WhoReacted;
+                }
+                else
+                {
+                    var whoReacted = post.WhoReacted.First(w => w.IdReactedUser == user.Id);
+                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
+
+                    memes.First(m => m.Id == guidPost).WhoReacted
+                        .Remove(memes
+                            .First(m => m.Id == guidPost).WhoReacted
+                            .First(a => a.Id == whoReacted.Id));
+                    //post.WhoReacted.Remove(whoReacted);
+                    //await mediaFilesService.UnMakeReactionInPost(post.Id, whoReacted);
+                }
+                //await mediaFilesService.PutMediaViewModel(post.Id, post);
+                //await GetMemesFromDB();
+            }
+            else
+            {
+                navigationManager.NavigateTo("/SignUser", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message[80]}", Severity.Error);
+        }
+    }
+
+    private async Task PerformSearch()
+    {
+        try
+        {
+            Console.WriteLine(SearchText);
         }
         catch (Exception ex)
         {
