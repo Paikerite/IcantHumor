@@ -6,10 +6,10 @@
                 <MudCardContent>
                     <MudGrid>
                         <MudItem xs="12">
-                            <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadFile" For="@(() => model.File)" @bind-Files="model.File" Hidden="false" Class="flex-1" Accept=".png, .jpg, .jpeg, .gif, .mp4" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
+                            <MudFileUpload T="IBrowserFile" Disabled="isLoading" OnFilesChanged="UploadFile" For="@(() => model.File)" @bind-Files="model.File" Hidden="false" Class="flex-1" Accept=".png, .jpg, .jpeg, .gif, .mp4" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
                             @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
                                 <ButtonTemplate>
-                                    <MudPaper Outlined="true" Height="300px" Class="@DragClass">
+                                    <MudPaper Outlined="true" Height="350px" Class="@DragClass">
                                         @if (MediaViewModelOld != null && model.File == null)
                                         {
                                             <MudStack AlignItems="AlignItems.Center">
@@ -23,6 +23,15 @@
                                         else
                                         {
                                             <MudText Align="Align.Center" Typo="Typo.h6">@model.File.Name</MudText>
+                                            if (isLoading)
+                                            {
+                                                <MudStack AlignItems="AlignItems.Center">
+                                                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                                                </MudStack>
+                                            }
+                                            <MudStack AlignItems="AlignItems.Center">
+                                                <MudImage id="imageShowcase" ObjectFit="ObjectFit.Contain" Height="245" />
+                                            </MudStack>
                                         }
                                     </MudPaper>
                                 </ButtonTemplate>
@@ -79,6 +88,9 @@
     private IUsersService usersService { get; set; }
 
     [Inject]
+    private IJSRuntime JS { get; set; }
+
+    [Inject]
     private ICategoriesService categoriesService { get; set; }
 
     [Inject]
@@ -105,7 +117,7 @@
 
     public void RemoveCategoryChip(MudChip chip) => valuesOfChips.Remove(valuesOfChips.First(v=>v.Name == chip.Text));
 
-    private int maxFileSize = 1024 * 1024 * 20; // 20MB
+    private int maxFileSize = 1024 * 1024 * 30; // 30MB
 
     private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
 
@@ -209,7 +221,6 @@
                 mediaViewModel.DateUpload = MediaViewModelOld.DateUpload;
                 mediaViewModel.WhoReacted = MediaViewModelOld.WhoReacted;
             }
-
             else if (TypeOperation is CRUD.Post)
             {
                 mediaViewModel.IdOfCreator = user.Id;
@@ -264,17 +275,45 @@
         isLoading = false;
     }
 
-    private void UploadFile(InputFileChangeEventArgs e)
+    private async Task UploadFile(InputFileChangeEventArgs e)
     {
+        isLoading = true;
         if (e.File.Size <= maxFileSize)
         {
             model.File = e.File;
-            Snackbar.Add($"This file {e.File.Name} has upload succesfully");
+
+            try
+            {
+                var imageStream = model.File.OpenReadStream(maxFileSize);
+                var dotnetImageStream = new DotNetStreamReference(imageStream);
+                await JS.InvokeVoidAsync("setImage", "imageShowcase", dotnetImageStream);
+                //var result = await JS.InvokeAsync<bool>("setImage", new object[] { "imageShowcase", dotnetImageStream});
+                //if (result)
+                //{
+                //    Snackbar.Add($"This file {model.File.Name} has upload succesfully");
+                //}
+                //else
+                //{
+                //    Snackbar.Add($"This file {model.File.Name} has upload succesfully, but we can't show what you upload right now");
+                //}
+
+                //await model.File.OpenReadStream().DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                //await model.File.OpenReadStream().DisposeAsync();
+                isLoading = false;
+            }
         }
         else
         {
             Snackbar.Add($"This file {e.File.Name} size too much, maximum {maxFileSize} mb", Severity.Error);
         }
+        isLoading = false;
         StateHasChanged();
     }
 

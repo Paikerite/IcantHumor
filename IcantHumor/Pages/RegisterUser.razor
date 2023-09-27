@@ -76,7 +76,7 @@
     private AuthenticationStateProvider authenticationStateProvider { get; set; }
 
     [Inject]
-    private ILocalStorageService LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
@@ -114,32 +114,6 @@
 
     private void UploadFile(InputFileChangeEventArgs e)
     {
-        //try
-        //{
-        //    var UploadedFile = e.File;
-        //    if (UploadedFile.Size <= maxFileSize)
-        //    {
-        //        // Прочитать содержимое файла в базов64-кодировке
-        //        var resizedFile = await UploadedFile.RequestImageFileAsync(UploadedFile.ContentType, 300, 300);
-        //        byte[] buffer = new byte[resizedFile.Size];
-        //        await using var stream = UploadedFile.OpenReadStream(maxFileSize);
-        //        await stream.ReadAsync(buffer);
-
-        //        imageBase64 = Convert.ToBase64String(buffer);
-        //        StateHasChanged();
-        //        Snackbar.Add($"This file {UploadedFile.Name} has upload succesfully");
-        //        //TODO upload the files to the server
-
-        //    }
-        //    else
-        //    {
-        //        Snackbar.Add($"This file {UploadedFile.Name} size too much, maximum 2 mb", Severity.Error);
-        //    }
-        //}
-        //catch (Exception ex)
-        //{
-        //    Snackbar.Add($"Some shit happend in server, info: {ex.Message}", Severity.Error);
-        //}
         if (e.File.Size <= maxFileSize)
         {
             ImageFile = e.File;
@@ -211,6 +185,11 @@
 
         try
         {
+            if (await usersService.IsExistNameUserInDB(userViewModel.UserName))
+            {
+                throw new Exception("Your Username is already taken, try another");
+            }
+
             var result = await usersService.PostUser(userViewModel);
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
             {
@@ -218,7 +197,7 @@
                 Role = result.Role,
                 UserName = result.UserName,
             });
-            await LocalStorage.SetItemAsync("token", JWTToken);
+            await LocalStorage.SetAsync("token", JWTToken);
             await authenticationStateProvider.GetAuthenticationStateAsync();
             navigationManager.NavigateTo("/", true);
         }

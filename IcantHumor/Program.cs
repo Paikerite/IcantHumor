@@ -1,5 +1,4 @@
-﻿using Blazored.LocalStorage;
-using IcantHumor.Data;
+﻿using IcantHumor.Data;
 using IcantHumor.Services;
 using IcantHumor.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -15,7 +14,8 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextPool<IHDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("IcantHumorDBConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("IcantHumorDBConnection"),
+    o=>o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -28,7 +28,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
 
 builder.Services.AddRazorPages();
-builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices(config =>
 {

@@ -35,12 +35,23 @@
                                 @media.Dislike
                             </MudButton>
                         </div>
-                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
+                        <MudButton Variant="Variant.Filled" @onclick="DownloadFileFromStream" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
                     </MudToolBar>
                 </MudPaper>
             </MudItem>
             <MudItem Class="d-flex justify-center" xs="12">
-                <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
+                @if (media.TypeOfFile is TypeOfFile.Video)
+                {
+                    <BlazoredVideo class="w-100"
+                                   style="max-width:720px;"
+                                   controls="controls">
+                        <source src="@media.UrlToFile" type="video/mp4" />
+                    </BlazoredVideo>
+                }
+                else
+                {
+                    <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
+                }
             </MudItem>
             <MudItem xs="12">
                 <MudChipSet ReadOnly="false">
@@ -110,6 +121,9 @@
 
     [Inject]
     private IReactedUserService reactedUserService { get; set; }
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
 
     [Inject]
     private IUsersService usersService { get; set; }
@@ -200,5 +214,25 @@
             }
             navigationManager.NavigateTo("/", true);
         }
+    }
+
+    private async Task DownloadFileFromStream()
+    {
+        var fileStream = GetFileStream();
+        var fileName = Path.GetFileName(media.UrlToFile);
+
+        using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
+
+    private Stream GetFileStream()
+    {
+        var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);
+        // var BinaryData = File.ReadAllBytes(path);
+        // var fileStream = new MemoryStream(BinaryData);
+
+        // return fileStream;
+        return File.OpenRead(@$"{path}");
     }
 }

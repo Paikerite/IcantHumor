@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IcantHumor.Data;
 using IcantHumor.Models;
+using Microsoft.Extensions.Hosting;
 
 namespace IcantHumor.WebAPI
 {
@@ -29,7 +30,10 @@ namespace IcantHumor.WebAPI
             {
                 return NotFound();
             }
-            return Ok(await _context.MediaFiles.Include(r => r.WhoReacted).ToListAsync());
+            return Ok(await _context.MediaFiles
+                .Include(c=>c.Categories)
+                .Include(r => r.WhoReacted)
+                .ToListAsync());
             //return Ok(await _context.MediaFiles.ToListAsync());
         }
 
@@ -53,9 +57,33 @@ namespace IcantHumor.WebAPI
             return Ok(mediaViewModel);
         }
 
-        // GET: api/MediaFiles/GetMediaFilesByCategories/5
-        [HttpGet("GetMediaFilesByCategories/{id}")]
-        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByCategories(Guid id)
+        //GET: api/MediaFiles/GetMediaFilesByName/egg
+        [HttpGet("GetMediaFilesByName/{SearchText}")]
+        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByName(string SearchText)
+        {
+            if (_context.MediaFiles == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                return CreatedAtAction(nameof(GetMediaFiles), SearchText);
+            }
+
+            var posts = await _context.MediaFiles
+                .Include(r => r.WhoReacted)
+                .Include(c=>c.Categories)
+                .Where(m=>m.Title.ToUpper().Contains(SearchText.ToUpper()) ||
+                m.Categories.Any(c=>c.Name.ToUpper().Contains(SearchText.ToUpper())))
+                .ToListAsync();
+
+            return Ok(posts);
+        }
+
+        // GET: api/MediaFiles/GetMediaFilesByCategory/5
+        [HttpGet("GetMediaFilesByCategory/{id}")]
+        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByCategory(Guid id)
         {
             if (_context.MediaFiles == null)
             {
@@ -68,6 +96,23 @@ namespace IcantHumor.WebAPI
 
             return Ok(mediaFiles);
         }
+
+        // GET: api/MediaFiles/GetMediaFilesByCategories/5,2,3,4
+        //[HttpGet("GetMediaFilesByCategories/{categories}")]
+        //public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByCategories(IEnumerable<Guid> categories)
+        //{
+        //    if (_context.MediaFiles == null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    var mediaFiles = await _context.MediaFiles
+        //        .Include(c => c.Categories)
+        //        .Include(r=>r.WhoReacted)
+        //        .Where(m => m.Categories.Any(ct=>categories.Contains(ct.Id)))
+        //        .ToListAsync();
+
+        //    return Ok(mediaFiles);
+        //}
 
         // PATCH: api/MediaFiles/PatchCategoryInPost/5
         [HttpPatch("PatchCategoryInPost/{idPost}")]

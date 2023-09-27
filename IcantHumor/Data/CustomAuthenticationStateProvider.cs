@@ -1,7 +1,7 @@
-﻿using Blazored.LocalStorage;
-using IcantHumor.Models;
+﻿using IcantHumor.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using NuGet.Common;
@@ -15,9 +15,9 @@ namespace IcantHumor.Data
 {
     public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     {
-        private readonly ILocalStorageService _localStorage;
+        private readonly ProtectedLocalStorage _localStorage;
         private readonly HttpClient _http;
-        public CustomAuthenticationStateProvider(ILocalStorageService localStorage, HttpClient http)
+        public CustomAuthenticationStateProvider(ProtectedLocalStorage localStorage, HttpClient http)
         {
             _localStorage = localStorage;
             _http = http;
@@ -33,7 +33,9 @@ namespace IcantHumor.Data
             //var state = new AuthenticationState(user);
 
             //return state;
-            string JwtToken = await _localStorage.GetItemAsStringAsync("token");
+            var JwtTokenResult = await _localStorage.GetAsync<string>("token");
+
+            string JwtToken = JwtTokenResult.Success ? JwtTokenResult.Value : null;
 
             var identity = new ClaimsIdentity();
             _http.DefaultRequestHeaders.Authorization = null;

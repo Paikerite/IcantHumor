@@ -6,6 +6,8 @@ namespace IcantHumor.Services.Interfaces
     public interface IMediaFilesService
     {
         Task<IEnumerable<MediaViewModel>> GetMediaFiles();
+        //Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories);
+        Task<IEnumerable<MediaViewModel>> GetMediaFilesByName(string SearchText);
         Task<MediaViewModel> GetMediaViewModel(Guid id);
         Task<MediaViewModel> PutMediaViewModel(Guid id, MediaViewModel mediaViewModel);
         Task<MediaViewModel> PostMediaViewModel(MediaViewModel mediaViewModel);

@@ -72,6 +72,13 @@ namespace IcantHumor.Services
             return await _context.Users.ToListAsync();
         }
 
+        public async Task<bool> IsExistNameUserInDB(string UserName)
+        {
+            if (_context.Users == null) return false;
+
+            return await _context.Users.AnyAsync(u=>u.UserName == UserName);
+        }
+
         public async Task<UserViewModel> PostUser(UserViewModel userViewModel)
         {
             if (_context.Users == null)
@@ -91,7 +98,19 @@ namespace IcantHumor.Services
                 return null;
             }
 
-            _context.Entry(userViewModel).State = EntityState.Modified;
+            //_context.Entry(userViewModel).State = EntityState.Modified;
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user != null)
+            {
+                user.UserEmail = userViewModel.UserEmail;
+                user.UserName = userViewModel.UserName;
+                user.Password = userViewModel.Password;
+                user.ConfirmEmail = userViewModel.ConfirmEmail;
+                user.ProfilePicture = userViewModel.ProfilePicture;
+                user.Role = userViewModel.Role;
+            }
 
             try
             {

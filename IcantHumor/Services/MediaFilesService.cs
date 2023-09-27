@@ -41,9 +41,30 @@ namespace IcantHumor.Services
             }
         }
 
+        //public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories)
+        //{
+        //    var JsonRequest = JsonConvert.SerializeObject(categories);
+        //    var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-get+json");
+
+        //    var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategories/{content}");
+        //    if (products.IsSuccessStatusCode)
+        //    {
+        //        return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+        //    }
+        //    else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+        //    {
+        //        return Enumerable.Empty<MediaViewModel>();
+        //    }
+        //    else
+        //    {
+        //        var message = await products.Content.ReadAsStringAsync();
+        //        throw new Exception($"http status:{products.StatusCode}, message:{message}");
+        //    }
+        //}
+
         public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategory(Guid categoryId)
         {
-            var response = await httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategories/{categoryId}");
+            var response = await httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategory/{categoryId}");
             if (response.IsSuccessStatusCode)
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
@@ -57,6 +78,24 @@ namespace IcantHumor.Services
             {
                 var message = await response.Content.ReadAsStringAsync();
                 throw new Exception($"http status:{response.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByName(string SearchText)
+        {
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByName/{SearchText}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
             }
         }
 

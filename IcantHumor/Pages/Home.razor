@@ -6,16 +6,29 @@
     <MudToolBar Class="d-flex justify-space-between flex-grow-1">
         <AuthorizeView>
             <Authorized>
-                <MudIconButton Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" Href="/PostAdd" />
+                <MudIconButton Class="me-1" Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" Href="/PostAdd" />
             </Authorized>
         </AuthorizeView>
-        <div class="d-flex flex-grow-1 flex-column align-center">
-            <MudPagination ShowFirstButton="true" ShowLastButton="true" Count="4" />
-        </div>
         <MudTextField @bind-Value="SearchText" @bind-Value:after="PerformSearch" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
         <MudIconButton Class="ml-1" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" />
     </MudToolBar>
 </MudPaper>
+
+@* <MudPaper Class="d-flex flex-nowrap overflow-auto" Elevation="0"> *@
+<MudChipSet @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="CategorySelected" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
+    @if (categories != null)
+    {
+        @foreach (var item in categories)
+        {
+            <MudChip Class="w-100" Value="@item.Id" Text="@item.Name"></MudChip>
+        }
+    }
+    else
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+</MudChipSet>
+@* </MudPaper> *@
 
 <MudGrid>
     @if (memes == null)
@@ -47,7 +60,18 @@
                         @*<MudCardMedia Image="@(item.UrlToFile.Replace(@"\", "/"))"/>*@
                         <MudCardContent>
                             <MudBadge Content="item.TypeOfFile.ToString()" Color="Color.Primary" Overlap="true">
-                                <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
+                                @if (item.TypeOfFile is TypeOfFile.Video)
+                                {
+                                    <BlazoredVideo class="w-100 rounded-lg"
+                                                   style="max-width:290px;"
+                                                   controls="controls">
+                                        <source src="@item.UrlToFile" type="video/mp4" />
+                                    </BlazoredVideo>
+                                }
+                                else
+                                {
+                                    <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
+                                }
                                 <MudText Typo="Typo.h6">@item.Title</MudText>
                             </MudBadge>
                         </MudCardContent>
@@ -66,6 +90,11 @@
             </MudItem>
         }
     }
+    <MudItem xs="12">
+        <div class="d-flex flex-grow-1 flex-column align-center">
+            <MudPagination ShowFirstButton="true" ShowLastButton="true" Count="4" />
+        </div>
+    </MudItem>
 </MudGrid>
 
 @code {
@@ -79,6 +108,9 @@
     private IReactedUserService reactedUserService { get; set; }
 
     [Inject]
+    private ICategoriesService categoriesService { get; set; }
+
+    [Inject]
     private NavigationManager navigationManager { get; set; }
 
     [Inject]
@@ -88,9 +120,12 @@
     private ISnackbar Snackbar { get; set; }
 
     private IEnumerable<MediaViewModel> memes { get; set; }
+    private IEnumerable<CategoryViewModel> categories { get; set; }
     private UserViewModel user { get; set; }
 
     public string SearchText { get; set; }
+
+    public MudChip[] selectedCategories;
 
     private AuthenticationState authState { get; set; }
 
@@ -99,6 +134,7 @@
         try
         {
             memes = await mediaFilesService.GetMediaFiles();
+            categories = await categoriesService.GetCategories();
             authState = await authenticationState;
             user = await usersService.GetUserByName(authState.User.Identity.Name);
         }
@@ -141,6 +177,17 @@
                             .First(a => a.Id == whoReacted.Id));
                     //post.WhoReacted.Remove(whoReacted);
                     //await mediaFilesService.UnMakeReactionInPost(post.Id, whoReacted);
+                    if (react.ChosenReact != reaction)
+                    {
+                        var changePost = await mediaFilesService.MakeReactionInPost(post.Id, new ReactedUserViewModel
+                            {
+                                IdReactedUser = user.Id,
+                                ChosenReact = reaction,
+                            });
+
+                        memes.First(m => m.Id == guidPost).WhoReacted = changePost.WhoReacted;
+                    }
+
                 }
                 //await mediaFilesService.PutMediaViewModel(post.Id, post);
                 //await GetMemesFromDB();
@@ -156,11 +203,37 @@
         }
     }
 
+    private async Task CategorySelected()
+    {
+        try
+        {
+            memes = await mediaFilesService.GetMediaFiles();
+            if (selectedCategories.Length != 0)
+            {
+                memes = memes.Where(m => m.Categories
+                    .Any(ct => selectedCategories
+                        .Select(s => (Guid)s.Value)
+                        .Contains(ct.Id)));
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task PerformSearch()
     {
         try
         {
-            Console.WriteLine(SearchText);
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                memes = await mediaFilesService.GetMediaFilesByName(SearchText);
+            }
+            else
+            {
+                memes = await mediaFilesService.GetMediaFiles();
+            }
         }
         catch (Exception ex)
         {

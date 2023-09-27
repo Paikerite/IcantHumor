@@ -42,10 +42,7 @@
     private AuthenticationStateProvider authenticationStateProvider { get; set; }
 
     [Inject]
-    private ProtectedLocalStorage protectedLocalStorage { get; set; }
-
-    [Inject]
-    private ILocalStorageService LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
@@ -89,7 +86,7 @@
                         Role = result.Role,
                         UserName = result.UserName,
                     });
-                await LocalStorage.SetItemAsync("token", JWTToken);
+                await LocalStorage.SetAsync("token", JWTToken);
                 await authenticationStateProvider.GetAuthenticationStateAsync();
                 navigationManager.NavigateTo("/", true);
             }

@@ -1,0 +1,280 @@
+﻿@page "/InfoUser/{UserID:guid}"
+
+@if (user == null)
+{
+    <PageTitle>User info</PageTitle>
+}
+else
+{
+    <PageTitle>@user.UserName info</PageTitle>
+}
+<MudContainer>
+    <MudGrid>
+        <MudItem xs="12" sm="2">
+            <MudPaper Class="pa-3">
+                <MudStack Justify="Justify.Center">
+                    @if (user == null)
+                    {
+                        <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
+                    }
+                    else if (user.ProfilePicture != null || ImageFile != null)
+                    {
+                        <div class="d-flex justify-center">
+                            <MudImage Fluid="true" Src="@user.ProfilePicture" Class="rounded-lg" Width="128" id="avatarShowcase" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-center">
+                            <MudAvatar Color="Color.Primary">
+                                @user.UserName[0]
+                            </MudAvatar>
+                        </div>
+                    }
+                    @if (user == null)
+                    {
+                        <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <div>
+                            <MudText Typo="Typo.h5" Color="Color.Secondary" Align="Align.Center">@user.UserName</MudText>
+                            <MudText Align="Align.Center">Joker</MudText>
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.h5" Align="Align.Center">@user.Id</MudText>
+                            <MudText Align="Align.Center">GUID Number</MudText>
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.h5" Align="Align.Center">simple text</MudText>
+                            <MudText Align="Align.Center">Join Date</MudText>
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.h5" Align="Align.Center">@user.Role</MudText>
+                            <MudText Align="Align.Center">Rank</MudText>
+                        </div>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="10">
+            <MudPaper Class="pa-3">
+                <EditForm Context="EditUser" Model="@model" OnValidSubmit="@OnValidEdit">
+                    <DataAnnotationsValidator />
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Accept=".png" OnFilesChanged="UploadFile">
+                                <ButtonTemplate>
+                                    <MudButton HtmlTag="label"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                                               for="@context">
+                                        Upload Avatar
+                                    </MudButton>
+                                </ButtonTemplate>
+                                <SelectedTemplate>
+                                    @if (context != null)
+                                    {
+                                        <MudText>@context.Name</MudText>
+                                    }
+                                </SelectedTemplate>
+                            </MudFileUpload>
+                        </MudItem>
+                        @if (isLoading)
+                        {
+                            <MudItem xs="12">
+                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem xs="12">
+                                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </EditForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+    [Parameter]
+    public Guid UserID { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private ProtectedLocalStorage LocalStorage { get; set; }
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
+
+    private bool isLoading { get; set; } = false;
+
+    private int maxFileSize = 1024 * 1024 * 2; // 2MB
+
+    private IBrowserFile? ImageFile { get; set; }
+
+    private AuthenticationState authState { get; set; }
+
+    private UserViewModel user { get; set; }
+
+    private class Model
+    {
+        [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
+        public string UserName { get; set; }
+        [EmailAddress]
+        public string UserEmail { get; set; }
+        // public string? ProfilePicture { get; set; }
+        public IBrowserFile? File { get; set; }
+    }
+
+    private Model model { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            authState = await authenticationState;
+            user = await usersService.GetUser(UserID);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnValidEdit(EditContext context)
+    {
+        isLoading = true;
+        string urlToFile = null;
+        string oldAvatarImgToDelete = null;
+        if (ImageFile != null)
+        {
+            urlToFile = await CaptureFile();
+        }
+
+        var model = (Model)context.Model;
+        UserViewModel userViewModel = new()
+            {
+                ConfirmEmail = user.ConfirmEmail,
+                Id = user.Id,
+                Password = user.Password,
+                Role = user.Role,
+                UserName = model.UserName != null ? model.UserName : user.UserName,
+                UserEmail = model.UserEmail != null ? model.UserEmail : user.UserEmail,
+                ProfilePicture = urlToFile != null ? urlToFile : user.ProfilePicture,
+            };
+
+        try
+        {
+            if (await usersService.IsExistNameUserInDB(userViewModel.UserName) && userViewModel.UserName != authState.User.Identity.Name)
+            {
+                throw new Exception("Your Username is already taken, try another");
+            }
+            oldAvatarImgToDelete = user.ProfilePicture;
+
+            var result = await usersService.PutUser(user.Id, userViewModel);
+            if (result != null)
+            {
+                if (oldAvatarImgToDelete != null)
+                {
+                    System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldAvatarImgToDelete));
+                }
+                var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                {
+                    Id = result.Id,
+                    Role = result.Role,
+                    UserName = result.UserName,
+                });
+                await LocalStorage.SetAsync("token", JWTToken);
+                await authenticationStateProvider.GetAuthenticationStateAsync();
+            }
+            else
+            {
+                if (urlToFile!=null)
+                {
+                    System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", urlToFile));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+        isLoading = false;
+    }
+
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size <= maxFileSize)
+        {
+            ImageFile = e.File;
+            var imageStream = model.File.OpenReadStream(maxFileSize);
+            var dotnetImageStream = new DotNetStreamReference(imageStream);
+            await JS.InvokeVoidAsync("setImage", "avatarShowcase", dotnetImageStream);
+            Snackbar.Add($"This file {e.File.Name} has upload succesfully");
+        }
+        else
+        {
+            Snackbar.Add($"This file {e.File.Name} size too much, maximum {maxFileSize} mb", Severity.Error);
+        }
+        StateHasChanged();
+    }
+
+    private async Task<string> CaptureFile()
+    {
+        if (ImageFile == null)
+        {
+            return null;
+        }
+        try
+        {
+            //ImageFiles.Clear();
+            // e.GetMultipleFiles(maxAllowedFiles) for several files
+            string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
+                                                      Path.GetExtension(ImageFile.Name));
+
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "AvatarsImages");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            string absolutePath = Path.Combine(path, newFileName);
+            string relativePath = Path.Combine("AvatarsImages", newFileName);
+
+
+            await using FileStream fs = new(absolutePath, FileMode.Create);
+            ImageFile = await ImageFile.RequestImageFileAsync(ImageFile.ContentType, 300, 300);
+            await ImageFile.OpenReadStream(maxFileSize).CopyToAsync(fs);
+
+            return relativePath;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            return null;
+        }
+    }
+}
