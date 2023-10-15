@@ -46,7 +46,7 @@ else
                             <MudText Align="Align.Center">GUID Number</MudText>
                         </div>
                         <div>
-                            <MudText Typo="Typo.h5" Align="Align.Center">simple text</MudText>
+                            <MudText Typo="Typo.h5" Align="Align.Center">@user.RegisteredAt.ToString("d")</MudText>
                             <MudText Align="Align.Center">Join Date</MudText>
                         </div>
                         <div>
@@ -63,10 +63,10 @@ else
                     <DataAnnotationsValidator />
                     <MudGrid>
                         <MudItem xs="12">
-                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserName)" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Accept=".png" OnFilesChanged="UploadFile">
@@ -131,6 +131,12 @@ else
 
     private bool isLoading { get; set; } = false;
 
+    //private bool isShowSnackbarWarningSave { get; set; } = false;
+
+    private const string KeyForSnackbar = "UnsavedWarning";
+
+    private Snackbar WarningUnSavedInfo { get; set; }
+
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
     private IBrowserFile? ImageFile { get; set; }
@@ -145,7 +151,6 @@ else
         public string UserName { get; set; }
         [EmailAddress]
         public string UserEmail { get; set; }
-        // public string? ProfilePicture { get; set; }
         public IBrowserFile? File { get; set; }
     }
 
@@ -161,6 +166,23 @@ else
         catch (Exception ex)
         {
             Snackbar.Add($"Error happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void IsUnsavedData()
+    {
+        if (!string.IsNullOrEmpty(model.UserEmail) || !string.IsNullOrEmpty(model.UserName) || model.File != null)
+        {
+            WarningUnSavedInfo = Snackbar.Add("You haven't save the changes!", Severity.Error, config =>
+            {
+                config.VisibleStateDuration = int.MaxValue;
+                config.ShowCloseIcon = false;
+                config.DuplicatesBehavior = SnackbarDuplicatesBehavior.Prevent;
+            }, KeyForSnackbar);
+        }
+        else if (string.IsNullOrEmpty(model.UserEmail) && string.IsNullOrEmpty(model.UserName) && model.File == null)
+        {
+            Snackbar.RemoveByKey(KeyForSnackbar);
         }
     }
 
@@ -202,17 +224,17 @@ else
                     System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldAvatarImgToDelete));
                 }
                 var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
-                {
-                    Id = result.Id,
-                    Role = result.Role,
-                    UserName = result.UserName,
-                });
+                    {
+                        Id = result.Id,
+                        Role = result.Role,
+                        UserName = result.UserName,
+                    });
                 await LocalStorage.SetAsync("token", JWTToken);
                 await authenticationStateProvider.GetAuthenticationStateAsync();
             }
             else
             {
-                if (urlToFile!=null)
+                if (urlToFile != null)
                 {
                     System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", urlToFile));
                 }

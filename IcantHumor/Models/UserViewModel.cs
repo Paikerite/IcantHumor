@@ -8,6 +8,7 @@ namespace IcantHumor.Models
         [Key]
         public Guid Id { get; set; }
         public Roles Role { get; set; }
+        public DateTime RegisteredAt { get; set; }
         [Required]
         public string UserName { get; set; }
         [Required]

@@ -1,4 +1,5 @@
-﻿using IcantHumor.Models;
+﻿using Azure;
+using IcantHumor.Models;
 using IcantHumor.Services.Interfaces;
 using Newtonsoft.Json;
 using System.Text;
@@ -41,26 +42,63 @@ namespace IcantHumor.Services
             }
         }
 
-        //public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories)
-        //{
-        //    var JsonRequest = JsonConvert.SerializeObject(categories);
-        //    var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-get+json");
+        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories)
+        {
+            string content = string.Join("&", categories);
 
-        //    var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategories/{content}");
-        //    if (products.IsSuccessStatusCode)
-        //    {
-        //        return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
-        //    }
-        //    else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
-        //    {
-        //        return Enumerable.Empty<MediaViewModel>();
-        //    }
-        //    else
-        //    {
-        //        var message = await products.Content.ReadAsStringAsync();
-        //        throw new Exception($"http status:{products.StatusCode}, message:{message}");
-        //    }
-        //}
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategories/{content}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds)
+        {
+            string content = string.Join("&", categoriesIds);
+
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{content}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage)
+        {
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaPerPage/{page}/{itemsPerPage}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
 
         public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategory(Guid categoryId)
         {
@@ -218,6 +256,79 @@ namespace IcantHumor.Services
             {
                 var message = await response.Content.ReadAsStringAsync();
                 throw new Exception($"http status:{response.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<int> GetCountMediaFiles()
+        {
+            var products = await this.httpClient.GetAsync("api/MediaFiles/GetCountMediaFiles");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<int>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return 0;
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<int> GetCountMediaFilesIncludeCategories(IEnumerable<Guid> categoriesIds)
+        {
+            string content = string.Join("&", categoriesIds);
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetCountMediaFilesIncludeCategories/{content}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<int>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return 0;
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage)
+        {
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<int> GetCountMediaFilesBySearch(string SearchText)
+        {
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetCountMediaFilesBySearch/{SearchText}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<int>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return 0;
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
             }
         }
     }

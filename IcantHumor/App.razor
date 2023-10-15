@@ -3,7 +3,12 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" >
                 <NotAuthorized>
-                    not autrorized to see this lol
+                    <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+                        <div class="d-flex flex-grow-1 flex-column align-center">
+                            <h2>You are not authorized to see this.....</h2>
+                            <MudImage Src="staticimgs/SUSYCAT4x.webp"></MudImage>
+                        </div>
+                    </MudContainer>
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -11,7 +16,12 @@
         <NotFound>
             <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
+                <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+                    <div class="d-flex flex-grow-1 flex-column align-center">
+                        <h2 role="alert">Have you lost?</h2>
+                        <MudLink Href="/">Back where you came</MudLink>
+                    </div>
+                </MudContainer>
             </LayoutView>
         </NotFound>
     </Router>
