@@ -287,17 +287,6 @@
                 var imageStream = model.File.OpenReadStream(maxFileSize);
                 var dotnetImageStream = new DotNetStreamReference(imageStream);
                 await JS.InvokeVoidAsync("setImage", "imageShowcase", dotnetImageStream);
-                //var result = await JS.InvokeAsync<bool>("setImage", new object[] { "imageShowcase", dotnetImageStream});
-                //if (result)
-                //{
-                //    Snackbar.Add($"This file {model.File.Name} has upload succesfully");
-                //}
-                //else
-                //{
-                //    Snackbar.Add($"This file {model.File.Name} has upload succesfully, but we can't show what you upload right now");
-                //}
-
-                //await model.File.OpenReadStream().DisposeAsync();
             }
             catch (Exception ex)
             {
@@ -305,7 +294,6 @@
             }
             finally
             {
-                //await model.File.OpenReadStream().DisposeAsync();
                 isLoading = false;
             }
         }

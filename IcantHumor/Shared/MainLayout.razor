@@ -15,7 +15,7 @@
             </MudText>
         </MudStack>
         <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Row="true">
-            <MudButton FullWidth="true" Href="/" Variant="Variant.Text" Size="Size.Large">Home</MudButton>
+            <MudButton FullWidth="true" Target="_parent" Href="/" Variant="Variant.Text" Size="Size.Large">Home</MudButton>
 @*             <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large">Counter</MudButton>
             <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large">FetchData</MudButton> *@
         </MudStack>
@@ -72,9 +72,6 @@
     [CascadingParameter]
     private Task<AuthenticationState> authenticationState { get; set; }
 
-    //[Inject]
-    //private AuthenticationStateProvider authenticationStateProvider { get; set; }
-
     [Inject]
     public IUsersService usersService { get; set; }
 
@@ -122,9 +119,7 @@
 
     private async Task Logout()
     {
-        //var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
-        //await customAuthStateProvider.Logout();
-        await LocalStorage.DeleteAsync("token");
+        await LocalStorage.DeleteAsync("ICANTHUMOR512");
         navigationManager.NavigateTo("/", true);
     }
 }

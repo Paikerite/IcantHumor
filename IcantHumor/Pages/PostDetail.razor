@@ -153,11 +153,39 @@
 
     private async Task PutReact(React reaction)
     {
+        // try
+        // {
+        //     var user = await usersService.GetUserByName(authState.User.Identity.Name);
+        //     if (authState.User.Identity.IsAuthenticated)
+        //     {
+        //         if (!media.WhoReacted.Any(w => w.IdReactedUser == user.Id))
+        //         {
+        //             var changePost = await mediaFilesService.MakeReactionInPost(media.Id, new ReactedUserViewModel
+        //                 {
+        //                     IdReactedUser = user.Id,
+        //                     ChosenReact = reaction,
+        //                 });
+
+        //             media.WhoReacted = changePost.WhoReacted;
+        //         }
+        //         else
+        //         {
+        //             var whoReacted = media.WhoReacted.First(w => w.IdReactedUser == user.Id);
+        //             var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
+
+        //             //memes.First(m => m.Id == guidPost).WhoReacted
+        //             //    .Remove(memes
+        //             //        .First(m => m.Id == guidPost).WhoReacted
+        //             //        .First(a => a.Id == whoReacted.Id));
+        //             media.WhoReacted.Remove(media.WhoReacted.First(r=>r.Id == whoReacted.Id));
+        //         }
+        //     }
         try
         {
-            var user = await usersService.GetUserByName(authState.User.Identity.Name);
             if (authState.User.Identity.IsAuthenticated)
             {
+                var user = await usersService.GetUserByName(authState.User.Identity.Name);
+                //var post = await mediaFilesService.GetMediaViewModel(guidPost);
                 if (!media.WhoReacted.Any(w => w.IdReactedUser == user.Id))
                 {
                     var changePost = await mediaFilesService.MakeReactionInPost(media.Id, new ReactedUserViewModel
@@ -173,11 +201,19 @@
                     var whoReacted = media.WhoReacted.First(w => w.IdReactedUser == user.Id);
                     var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
 
-                    //memes.First(m => m.Id == guidPost).WhoReacted
-                    //    .Remove(memes
-                    //        .First(m => m.Id == guidPost).WhoReacted
-                    //        .First(a => a.Id == whoReacted.Id));
-                    media.WhoReacted.Remove(media.WhoReacted.First(r=>r.Id == whoReacted.Id));
+                    media.WhoReacted
+                        .Remove(media.WhoReacted.First(a => a.Id == whoReacted.Id));
+                    if (react.ChosenReact != reaction)
+                    {
+                        var changePost = await mediaFilesService.MakeReactionInPost(media.Id, new ReactedUserViewModel
+                            {
+                                IdReactedUser = user.Id,
+                                ChosenReact = reaction,
+                            });
+
+                        media.WhoReacted = changePost.WhoReacted;
+                    }
+
                 }
             }
             else
@@ -187,7 +223,7 @@
         }
         catch (Exception ex)
         {
-            snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message[80]}", Severity.Error);
+            snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
         }
     }
 
@@ -219,11 +255,14 @@
     private async Task DownloadFileFromStream()
     {
         var fileStream = GetFileStream();
-        var fileName = Path.GetFileName(media.UrlToFile);
+        var fileName = Path.GetFileNameWithoutExtension(media.UrlToFile);
+        var fileExtension = Path.GetExtension(media.UrlToFile);
+
+        fileName = media.Title;
 
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName+fileExtension, streamRef);
     }
 
     private Stream GetFileStream()

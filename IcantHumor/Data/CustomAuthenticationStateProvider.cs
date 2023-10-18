@@ -25,15 +25,7 @@ namespace IcantHumor.Data
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            //string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-            //var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
-            ////var identity = new ClaimsIdentity();
-
-            //var user = new ClaimsPrincipal(identity);
-            //var state = new AuthenticationState(user);
-
-            //return state;
-            var JwtTokenResult = await _localStorage.GetAsync<string>("token");
+            var JwtTokenResult = await _localStorage.GetAsync<string>("ICANTHUMOR512");
 
             string JwtToken = JwtTokenResult.Success ? JwtTokenResult.Value : null;
 
@@ -42,24 +34,27 @@ namespace IcantHumor.Data
 
             if (!string.IsNullOrEmpty(JwtToken))
             {
-                JwtToken = JwtToken.Replace("\"", "");
+                //JwtToken = JwtToken.Replace("\"", "");
                 var tokenHandler = new JwtSecurityTokenHandler();
                 JwtSecurityToken securityToken;
                 if (tokenHandler.CanReadToken(JwtToken))
                 {
-                    securityToken = tokenHandler.ReadToken(JwtToken) as JwtSecurityToken;
+                    if (GenerationTokenJWT.ValidateCurrentToken(JwtToken))
+                    { 
+                        securityToken = tokenHandler.ReadToken(JwtToken) as JwtSecurityToken;
+                    }
+                    else
+                    {
+                        await _localStorage.DeleteAsync("ICANTHUMOR512");
+                        return new AuthenticationState(new ClaimsPrincipal(identity));
+                    }
                 }
                 else
                 {
+                    await _localStorage.DeleteAsync("ICANTHUMOR512");
                     return new AuthenticationState(new ClaimsPrincipal(identity));
                 }
 
-                //IEnumerable<Claim> claims = ParseClaimsFromJwt(JwtToken);
-                //identity = new ClaimsIdentity(new List<Claim>
-                //{
-                //    new Claim(ClaimTypes.Name, claims.FirstOrDefault(key => key.Type == "unique_name").Value),
-                //    new Claim(ClaimTypes.Role, claims.FirstOrDefault(key => key.Type == "role").Value),
-                //}, "jwt");
                 List<Claim> claims = securityToken.Claims.ToList();
 
                 claims.AddRange(new List<Claim>{

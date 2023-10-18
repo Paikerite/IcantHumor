@@ -1,4 +1,5 @@
-﻿@page "/{page:int?}"
+﻿@* @page "/{SearchName?}/{page:int?}/{*categoriesStr}" *@
+@page "/"
 
 <PageTitle>Treasure</PageTitle>
 
@@ -9,17 +10,24 @@
                 <MudIconButton Class="me-3" Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" Href="/PostAdd" />
             </Authorized>
         </AuthorizeView>
-        <MudTextField @bind-Value="SearchText" @bind-Value:after="PerformSearch" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
+        <MudTextField @bind-Value="SearchText" @bind-Value:after="InitMediaFiles" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
         <MudIconButton Class="ml-3" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" />
     </MudToolBar>
 </MudPaper>
 
-<MudChipSet @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="CategorySelected" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
+<MudChipSet Filter="true" @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
     @if (categories != null)
     {
         @foreach (var item in categories)
         {
-            <MudChip Class="w-100" Value="@item.Id" Text="@item.Name"></MudChip>
+            if (selectedCategoryGuidsByUrl != null && selectedCategoryGuidsByUrl.Contains(item.Id))
+            {
+                <MudChip Class="w-100" Value="@item.Id" Default="true" Text="@item.Name"></MudChip>
+            }
+            else
+            {
+                <MudChip Class="w-100" Value="@item.Id" Text="@item.Name"></MudChip>
+            }
         }
     }
     else
@@ -31,7 +39,7 @@
 <MudGrid>
     @if (memes == null || isLoadingMedia == true)
     {
-        @for (int i = 0; i < 12; i++)
+        @for (int i = 0; i < ItemsPerPage; i++)
         {
             <MudItem xs="12" sm="6" md="3">
                 <MudCard>
@@ -90,23 +98,32 @@
     }
     <MudItem xs="12">
         <div class="d-flex flex-grow-1 flex-column align-center">
-            <MudPagination ShowFirstButton="true" @bind-Selected="@SelectedPage" @bind-Selected:after="PageSelected" ShowLastButton="true" Count="CountPages" />
+            <MudPagination ShowFirstButton="true" @bind-Selected="@SelectedPage" @bind-Selected:after="InitMediaFiles" ShowLastButton="true" Count="CountPages" />
         </div>
     </MudItem>
 </MudGrid>
 
 @code {
     [Parameter]
+    [SupplyParameterFromQuery(Name = "page")]
     public int? Page { get; set; }
 
-    // [Parameter]
-    // public string? categoriesStr { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchName { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "categories")]
+    public string? categoriesStr { get; set; }
 
     [CascadingParameter]
     private Task<AuthenticationState> authenticationState { get; set; }
 
     [Inject]
     private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
+    private NavigationManager navigation { get; set; }
 
     [Inject]
     private IReactedUserService reactedUserService { get; set; }
@@ -125,6 +142,7 @@
 
     private IEnumerable<MediaViewModel> memes { get; set; }
     private IEnumerable<CategoryViewModel> categories { get; set; }
+    private IEnumerable<Guid> selectedCategoryGuidsByUrl { get; set; }
     private UserViewModel user { get; set; }
 
     private int ItemsPerPage { get; set; } = 8;
@@ -147,19 +165,35 @@
     {
         try
         {
-            if (Page == null)
+            if (categoriesStr != null)
             {
-                memes = await mediaFilesService.GetMediaPerPage(0, ItemsPerPage);
-            }
-            else
-            {
-                memes = await mediaFilesService.GetMediaPerPage((int)Page, ItemsPerPage);
-                SelectedPage = (int)Page;
+                selectedCategoryGuidsByUrl = categoriesStr.Split('&')
+                                                        .Select(s => Guid.Parse(s))
+                                                        .ToList();
             }
 
-            GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
+            if (SearchName != null)
+            {
+                SearchText = SearchName;
+            }
 
-            CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
+            SelectedPage = Page != null ? (int)Page : 1;
+
+            // if (Page == null)
+            // {
+            //     memes = await mediaFilesService.GetMediaPerPage(0, ItemsPerPage);
+            //     Page = 0;
+            // }
+            // else
+            // {
+            //     memes = await mediaFilesService.GetMediaPerPage((int)Page, ItemsPerPage);
+            //     SelectedPage = (int)Page;
+            // }
+
+            // GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
+
+            // CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
+            await InitMediaFiles();
 
             categories = await categoriesService.GetCategories();
             authState = await authenticationState;
@@ -180,11 +214,6 @@
                 var post = await mediaFilesService.GetMediaViewModel(guidPost);
                 if (!post.WhoReacted.Any(w => w.IdReactedUser == user.Id))
                 {
-                    //post.WhoReacted.Add(new ReactedUserViewModel
-                    //{
-                    //    IdReactedUser = user.Id,
-                    //    ChosenReact = reaction,
-                    //});
                     var changePost = await mediaFilesService.MakeReactionInPost(post.Id, new ReactedUserViewModel
                         {
                             IdReactedUser = user.Id,
@@ -202,8 +231,6 @@
                         .Remove(memes
                             .First(m => m.Id == guidPost).WhoReacted
                             .First(a => a.Id == whoReacted.Id));
-                    //post.WhoReacted.Remove(whoReacted);
-                    //await mediaFilesService.UnMakeReactionInPost(post.Id, whoReacted);
                     if (react.ChosenReact != reaction)
                     {
                         var changePost = await mediaFilesService.MakeReactionInPost(post.Id, new ReactedUserViewModel
@@ -224,18 +251,8 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message[80]}", Severity.Error);
+            Snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
         }
-    }
-
-    private async Task PageSelected()
-    {
-        await InitMediaFiles();
-    }
-
-    private async Task CategorySelected()
-    {
-        await InitMediaFiles();
     }
 
     private async Task InitMediaFiles()
@@ -250,12 +267,29 @@
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesIncludeCategories(selectedCategr);
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
+                string ctgStr = string.Join("&", selectedCategr);
+                string uri = navigation.GetUriWithQueryParameters(
+                        new Dictionary<string, object?>
+                            {
+                                ["categories"] = ctgStr,
+                                ["search"] = null,
+                                ["page"] = SelectedPage
+                            });
+                navigation.NavigateTo(uri);
             }
             else if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage);
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesBySearch(SearchText);
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
+                string uri = navigation.GetUriWithQueryParameters(
+                        new Dictionary<string, object?>
+                            {
+                                ["categories"] = null,
+                                ["search"] = SearchText,
+                                ["page"] = SelectedPage
+                            });
+                navigation.NavigateTo(uri);
             }
             else
             {
@@ -263,6 +297,15 @@
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
+                string uri = navigation.GetUriWithQueryParameters(
+                                        new Dictionary<string, object?>
+                                            {
+                                                ["categories"] = null,
+                                                ["search"] = null,
+                                                ["page"] = SelectedPage
+                                            });
+
+                navigation.NavigateTo(uri);
             }
         }
         catch (Exception ex)
@@ -270,29 +313,5 @@
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
         isLoadingMedia = false;
-    }
-
-    private async Task PerformSearch()
-    {
-        await InitMediaFiles();
-        // isLoadingMedia = true;
-        // try
-        // {
-        //     if (!string.IsNullOrWhiteSpace(SearchText))
-        //     {
-        //         memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage);
-        //         GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesBySearch(SearchText);
-        //         CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
-        //     }
-        //     else
-        //     {
-        //         memes = await mediaFilesService.GetMediaPerPage(SelectedPage, ItemsPerPage);
-        //     }
-        // }
-        // catch (Exception ex)
-        // {
-        //     Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
-        // }
-        // isLoadingMedia = false;
     }
 }

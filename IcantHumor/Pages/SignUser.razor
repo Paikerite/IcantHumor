@@ -16,6 +16,9 @@
                         <MudItem xs="12">
                             <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                         </MudItem>
+                        <MudItem xs="12">
+                            <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
+                        </MudItem>
                     </MudGrid>
                 </MudCardContent>
                 <MudCardActions>
@@ -57,6 +60,7 @@
         [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; }
+        public bool Remember { get; set; }
     }
 
     private LoginModel model = new();
@@ -70,14 +74,8 @@
         isLoading = true;
         var result = await usersService.GetUserByName(model.UserName);
 
-        if (result != null)
+        if (result != null && result.Password == model.Password)
         {
-            //var customAuthStateProvider = (CustomAuthenticationStateProvider)authenticationStateProvider;
-            //await customAuthStateProvider.UpdateAuthenticationState(new UserViewModel
-            //    {
-            //        UserName = result.UserName,
-            //        Role = result.Role
-            //    });
             try
             {
                 var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
@@ -85,8 +83,8 @@
                         Id = result.Id,
                         Role = result.Role,
                         UserName = result.UserName,
-                    });
-                await LocalStorage.SetAsync("token", JWTToken);
+                    }, model.Remember);
+                await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
                 await authenticationStateProvider.GetAuthenticationStateAsync();
                 navigationManager.NavigateTo("/", true);
             }

@@ -229,7 +229,7 @@ else
                         Role = result.Role,
                         UserName = result.UserName,
                     });
-                await LocalStorage.SetAsync("token", JWTToken);
+                await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
                 await authenticationStateProvider.GetAuthenticationStateAsync();
             }
             else
