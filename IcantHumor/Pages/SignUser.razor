@@ -60,7 +60,7 @@
         [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; }
-        public bool Remember { get; set; }
+        public bool Remember { get; set; } = true;
     }
 
     private LoginModel model = new();

@@ -41,6 +41,24 @@ namespace IcantHumor.Services
             }
         }
 
+        public async Task<IEnumerable<CategoryViewModel>> GetCategoriesByName(string SearchText)
+        {
+            var products = await this.httpClient.GetAsync($"api/Categories/GetCategoriesByName/{SearchText}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<CategoryViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<CategoryViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
         public async Task<CategoryViewModel> GetCategory(Guid id)
         {
             var response = await this.httpClient.GetAsync($"api/Categories/{id}");

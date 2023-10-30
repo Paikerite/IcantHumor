@@ -122,6 +122,7 @@ namespace IcantHumor.WebAPI
             if (page == 0 || page == 1)
             {
                 return Ok(await _context.MediaFiles
+                        .OrderByDescending(c => c.DateUpload)
                         .AsSingleQuery()
                         .Include(c => c.Categories)
                         .Include(r => r.WhoReacted)
@@ -133,6 +134,7 @@ namespace IcantHumor.WebAPI
             {
                 int index = page * itemsPerPage - itemsPerPage;
                 return Ok(await _context.MediaFiles
+                        .OrderByDescending(c => c.DateUpload)
                         .AsSingleQuery()
                         .Include(c => c.Categories)
                         .Include(r => r.WhoReacted)
@@ -157,6 +159,7 @@ namespace IcantHumor.WebAPI
             if (page == 0 || page == 1)
             {
                 return Ok(await _context.MediaFiles
+                    .OrderByDescending(c => c.DateUpload)
                         .AsSingleQuery()
                         .Include(c => c.Categories)
                         .Include(r => r.WhoReacted)
@@ -169,6 +172,7 @@ namespace IcantHumor.WebAPI
             {
                 int index = page * itemsPerPage - itemsPerPage;
                 return Ok(await _context.MediaFiles
+                    .OrderByDescending(c => c.DateUpload)
                         .AsSingleQuery()
                         .Include(c => c.Categories)
                         .Include(r => r.WhoReacted)
@@ -193,6 +197,7 @@ namespace IcantHumor.WebAPI
                                             .ToList();
 
             return Ok(await _context.MediaFiles
+                .OrderByDescending(c => c.DateUpload)
                 .Include(r => r.WhoReacted)
                 .Include(c => c.Categories)
                 .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
@@ -214,10 +219,11 @@ namespace IcantHumor.WebAPI
             }
 
             var posts = await _context.MediaFiles
+                .OrderByDescending(c => c.DateUpload)
                 .Include(r => r.WhoReacted)
                 .Include(c => c.Categories)
-                .Where(m => m.Title.ToUpper().Contains(SearchText.ToUpper()) ||
-                m.Categories.Any(c => c.Name.ToUpper().Contains(SearchText.ToUpper())))
+                .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+                m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
                 .ToListAsync();
 
             return Ok(posts);
@@ -240,11 +246,12 @@ namespace IcantHumor.WebAPI
             if (page == 0 || page == 1)
             {
                 return(await _context.MediaFiles
+                    .OrderByDescending(c => c.DateUpload)
                     .AsSingleQuery()
                     .Include(r => r.WhoReacted)
                     .Include(c => c.Categories)
-                    .Where(m => m.Title.ToUpper().Contains(SearchText.ToUpper()) ||
-                    m.Categories.Any(c => c.Name.ToUpper().Contains(SearchText.ToUpper())))
+                    .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+                    m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
                     .Take(itemsPerPage)
                     .ToListAsync());
             }
@@ -252,11 +259,12 @@ namespace IcantHumor.WebAPI
             {
                 int index = page * itemsPerPage - itemsPerPage;
                 return Ok(await _context.MediaFiles
+                    .OrderByDescending(c => c.DateUpload)
                     .AsSingleQuery()
                     .Include(r => r.WhoReacted)
                     .Include(c => c.Categories)
-                    .Where(m => m.Title.ToUpper().Contains(SearchText.ToUpper()) ||
-                    m.Categories.Any(c => c.Name.ToUpper().Contains(SearchText.ToUpper())))
+                    .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+                    m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
                     .Skip(index).Take(itemsPerPage)
                     .ToListAsync());
             }
@@ -271,6 +279,7 @@ namespace IcantHumor.WebAPI
                 return NotFound();
             }
             var mediaFiles = await _context.MediaFiles
+                .OrderByDescending(c => c.DateUpload)
                 .Include(c => c.Categories)
                 .Where(m => m.Categories.Any(ct => ct.Id == id))
                 .ToListAsync();

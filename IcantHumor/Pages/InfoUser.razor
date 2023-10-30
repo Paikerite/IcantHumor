@@ -17,7 +17,7 @@ else
                     {
                         <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                     }
-                    else if (user.ProfilePicture != null || ImageFile != null)
+                    else if (user.ProfilePicture != null || model.File != null)
                     {
                         <div class="d-flex justify-center">
                             <MudImage Fluid="true" Src="@user.ProfilePicture" Class="rounded-lg" Width="128" id="avatarShowcase" />
@@ -69,7 +69,7 @@ else
                             <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Accept=".png" OnFilesChanged="UploadFile">
+                            <MudFileUpload T="IBrowserFile" @bind-Files="model.File" For="@(() => model.File)" Accept=".png" OnFilesChanged="UploadFile">
                                 <ButtonTemplate>
                                     <MudButton HtmlTag="label"
                                                Variant="Variant.Filled"
@@ -80,7 +80,7 @@ else
                                     </MudButton>
                                 </ButtonTemplate>
                                 <SelectedTemplate>
-                                    @if (context != null)
+                                    @if (context != null && context.Size <= maxFileSize)
                                     {
                                         <MudText>@context.Name</MudText>
                                     }
@@ -91,6 +91,12 @@ else
                         {
                             <MudItem xs="12">
                                 <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                            </MudItem>
+                        }
+                        else if (isLoading == false && (string.IsNullOrEmpty(model.UserName) && string.IsNullOrEmpty(model.UserName) && (model.File == null || model.File.Size >= maxFileSize)))
+                        {
+                            <MudItem xs="12">
+                                <MudButton Disabled="true" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
                             </MudItem>
                         }
                         else
@@ -139,7 +145,7 @@ else
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
-    private IBrowserFile? ImageFile { get; set; }
+    //private IBrowserFile? ImageFile { get; set; }
 
     private AuthenticationState authState { get; set; }
 
@@ -180,7 +186,7 @@ else
                 config.DuplicatesBehavior = SnackbarDuplicatesBehavior.Prevent;
             }, KeyForSnackbar);
         }
-        else if (string.IsNullOrEmpty(model.UserEmail) && string.IsNullOrEmpty(model.UserName) && model.File == null)
+        else if (string.IsNullOrEmpty(model.UserEmail) && string.IsNullOrEmpty(model.UserName) && (model.File == null || model.File.Size >= maxFileSize))
         {
             Snackbar.RemoveByKey(KeyForSnackbar);
         }
@@ -191,12 +197,12 @@ else
         isLoading = true;
         string urlToFile = null;
         string oldAvatarImgToDelete = null;
-        if (ImageFile != null)
+
+        var model = (Model)context.Model;
+        if (model.File != null)
         {
             urlToFile = await CaptureFile();
         }
-
-        var model = (Model)context.Model;
         UserViewModel userViewModel = new()
             {
                 ConfirmEmail = user.ConfirmEmail,
@@ -251,8 +257,8 @@ else
     {
         if (e.File.Size <= maxFileSize)
         {
-            ImageFile = e.File;
-            var imageStream = model.File.OpenReadStream(maxFileSize);
+            //model.File = e.File;
+            var imageStream = e.File.OpenReadStream(maxFileSize);
             var dotnetImageStream = new DotNetStreamReference(imageStream);
             await JS.InvokeVoidAsync("setImage", "avatarShowcase", dotnetImageStream);
             Snackbar.Add($"This file {e.File.Name} has upload succesfully");
@@ -266,7 +272,7 @@ else
 
     private async Task<string> CaptureFile()
     {
-        if (ImageFile == null)
+        if (model.File == null)
         {
             return null;
         }
@@ -275,7 +281,7 @@ else
             //ImageFiles.Clear();
             // e.GetMultipleFiles(maxAllowedFiles) for several files
             string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
-                                                      Path.GetExtension(ImageFile.Name));
+                                                      Path.GetExtension(model.File.Name));
 
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "AvatarsImages");
             if (!Directory.Exists(path))
@@ -288,8 +294,8 @@ else
 
 
             await using FileStream fs = new(absolutePath, FileMode.Create);
-            ImageFile = await ImageFile.RequestImageFileAsync(ImageFile.ContentType, 300, 300);
-            await ImageFile.OpenReadStream(maxFileSize).CopyToAsync(fs);
+            model.File = await model.File.RequestImageFileAsync(model.File.ContentType, 300, 300);
+            await model.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
 
             return relativePath;
         }

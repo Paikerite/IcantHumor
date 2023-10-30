@@ -7,34 +7,76 @@
     <MudToolBar Class="d-flex justify-space-between flex-grow-1">
         <AuthorizeView>
             <Authorized>
-                <MudIconButton Class="me-3" Icon="@Icons.Material.Outlined.Add" Color="Color.Inherit" Href="/PostAdd" />
+                <MudIconButton Variant="Variant.Filled" Class="me-3" Icon="@Icons.Material.Outlined.Add" Color="Color.Primary" Href="/PostAdd" />
             </Authorized>
         </AuthorizeView>
-        <MudTextField @bind-Value="SearchText" @bind-Value:after="InitMediaFiles" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
-        <MudIconButton Class="ml-3" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" />
+        <MudTextField @bind-Value="SearchText" @bind-Value:after="InitMediaFiles" Label="Search by name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
+        <MudMenu Variant="Variant.Filled" Class="ml-3" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" Dense>
+            <MudMenuItem>
+                <MudMenu Variant="Variant.Filled" ActivationEvent="MouseEvent.MouseOver" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" Dense>
+                    <ActivatorContent>
+                        <MudMenuItem>Show on page</MudMenuItem>
+                    </ActivatorContent>
+
+                    <ChildContent>
+                        @if (ItemsPerPage == 8)
+                        {
+                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">8</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(8)">8</MudMenuItem>
+                        }
+                        @if (ItemsPerPage == 16)
+                        {
+                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">16</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(16)">16</MudMenuItem>
+                        }
+                        @if (ItemsPerPage == 30)
+                        {
+                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">30</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(30)">30</MudMenuItem>
+                        }
+                    </ChildContent>
+                </MudMenu>
+            </MudMenuItem>
+        </MudMenu>
     </MudToolBar>
 </MudPaper>
 
-<MudChipSet Filter="true" @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
-    @if (categories != null)
-    {
-        @foreach (var item in categories)
+<MudGrid>
+    <MudItem xs="12" sm="7" md="8">
+        <MudChipSet Filter="true" @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
+        @if (categories != null && !isLoadingCategory)
         {
-            if (selectedCategoryGuidsByUrl != null && selectedCategoryGuidsByUrl.Contains(item.Id))
+            @foreach (var item in categories)
             {
-                <MudChip Class="w-100" Value="@item.Id" Default="true" Text="@item.Name"></MudChip>
-            }
-            else
-            {
-                <MudChip Class="w-100" Value="@item.Id" Text="@item.Name"></MudChip>
+                if (selectedCategoryGuidsByUrl != null && selectedCategoryGuidsByUrl.Contains(item.Id))
+                {
+                    <MudChip Class="w-100 flex-none" Value="@item.Id" Default="true" Text="@item.Name"></MudChip>
+                }
+                else
+                {
+                    <MudChip Class="w-100 flex-none" Value="@item.Id" Text="@item.Name"></MudChip>
+                }
             }
         }
-    }
-    else
-    {
-        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-    }
-</MudChipSet>
+        else
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+    </MudChipSet>
+    </MudItem>
+    <MudItem xs="12" sm="5" md="4">
+        <MudTextField @bind-Value="SearchCategory" @bind-Value:after="SearchCategories" Label="Search category" Variant="Variant.Outlined" Adornment="Adornment.End" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
+    </MudItem>
+</MudGrid>
 
 <MudGrid>
     @if (memes == null || isLoadingMedia == true)
@@ -120,6 +162,9 @@
     private Task<AuthenticationState> authenticationState { get; set; }
 
     [Inject]
+    private ProtectedLocalStorage LocalStorage { get; set; }
+
+    [Inject]
     private IMediaFilesService mediaFilesService { get; set; }
 
     [Inject]
@@ -155,7 +200,11 @@
 
     private bool isLoadingMedia { get; set; } = false;
 
+    private bool isLoadingCategory { get; set; } = false;
+
     public string SearchText { get; set; }
+
+    public string SearchCategory { get; set; }
 
     public MudChip[] selectedCategories;
 
@@ -165,6 +214,10 @@
     {
         try
         {
+            var res = await LocalStorage.GetAsync<int>("HowManyItemsShowOnPage");
+
+            ItemsPerPage = res.Success ? res.Value : 8;
+
             if (categoriesStr != null)
             {
                 selectedCategoryGuidsByUrl = categoriesStr.Split('&')
@@ -195,7 +248,10 @@
             // CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
             await InitMediaFiles();
 
+            isLoadingCategory = true;
             categories = await categoriesService.GetCategories();
+            isLoadingCategory = false;
+
             authState = await authenticationState;
             user = await usersService.GetUserByName(authState.User.Identity.Name);
         }
@@ -253,6 +309,34 @@
         {
             Snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
         }
+    }
+
+    private async Task ChangedItemsPerPage(byte items)
+    {
+        await LocalStorage.SetAsync("HowManyItemsShowOnPage", items);
+        ItemsPerPage = items;
+        await InitMediaFiles();
+    }
+
+    private async Task SearchCategories()
+    {
+        isLoadingCategory = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(SearchCategory))
+            {
+                categories = await categoriesService.GetCategoriesByName(SearchCategory);
+            }
+            else
+            {
+                categories = await categoriesService.GetCategories();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+        isLoadingCategory = false;
     }
 
     private async Task InitMediaFiles()

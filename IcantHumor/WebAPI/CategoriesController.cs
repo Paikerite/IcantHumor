@@ -29,7 +29,7 @@ namespace IcantHumor.WebAPI
           {
               return NotFound();
           }
-            return Ok(await _context.Categories.ToListAsync());
+          return Ok(await _context.Categories.ToListAsync());
         }
 
         // GET: api/Categories/5
@@ -50,7 +50,7 @@ namespace IcantHumor.WebAPI
             return Ok(categoryViewModel);
         }
 
-        //GET: api/Categories/VideoGame
+        //GET: api/Categories/GetCategoryByName/VideoGame
         [HttpGet("GetCategoryByName/{name}")]
         public async Task<ActionResult<CategoryViewModel>> GetCategoryViewModelByName(string name)
         {
@@ -66,6 +66,27 @@ namespace IcantHumor.WebAPI
             }
 
             return Ok(categoryViewModel);
+        }
+
+        //GET: api/Categories/GetCategoriesByName/VideoGame
+        [HttpGet("GetCategoriesByName/{SearchText}")]
+        public async Task<ActionResult<IEnumerable<CategoryViewModel>>> GetCategoriesByName(string SearchText)
+        {
+            if (_context.Categories == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                return CreatedAtAction(nameof(GetCategories), SearchText);
+            }
+
+            var categories = await _context.Categories
+                .Where(predicate => predicate.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()))
+                .ToListAsync();
+
+            return Ok(categories);
         }
 
         // PUT: api/Categories/5

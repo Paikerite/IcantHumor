@@ -22,7 +22,7 @@
                                     <MudTooltip Text="Delete" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
                                     </MudTooltip>
-                                }         
+                                }
                             </Authorized>
                         </AuthorizeView>
                         <div>
@@ -39,53 +39,60 @@
                     </MudToolBar>
                 </MudPaper>
             </MudItem>
-            <MudItem Class="d-flex justify-center" xs="12">
-                @if (media.TypeOfFile is TypeOfFile.Video)
-                {
-                    <BlazoredVideo class="w-100"
-                                   style="max-width:720px;"
-                                   controls="controls">
-                        <source src="@media.UrlToFile" type="video/mp4" />
-                    </BlazoredVideo>
-                }
-                else
-                {
-                    <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
-                }
-            </MudItem>
-            <MudItem xs="12">
-                <MudChipSet ReadOnly="false">
-                    @foreach (var item in media.Categories)
+            <MudPaper Width="100%">
+                <MudItem Class="d-flex justify-center" xs="12">
+                    @if (media.TypeOfFile is TypeOfFile.Video)
                     {
-                        <MudChip Text="@item.Name"></MudChip>
-                    }
-                </MudChipSet>
-            </MudItem>
-            <MudItem xs="12">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    @if (userOfUploader != null)
-                    {
-                        <MudAvatar Color="Color.Primary">
-                            @if (userOfUploader.ProfilePicture != null)
-                            {
-                                <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
-                            }
-                            else
-                            {
-                                @userOfUploader.UserName[0]
-                            }
-                        </MudAvatar>
-                        <MudText>
-                            @userOfUploader.UserName
-                        </MudText>
+                        <BlazoredVideo class="w-100"
+                                       style="max-width:720px;"
+                                       controls="controls">
+                            <source src="@media.UrlToFile" type="video/mp4" />
+                        </BlazoredVideo>
                     }
                     else
                     {
-                        <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px"></MudSkeleton>
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="150px"></MudSkeleton>
+                        <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
                     }
-                </MudStack>
-            </MudItem>
+                </MudItem>
+            </MudPaper>
+            <MudPaper Width="100%" Class="mt-3">
+                <MudItem xs="12">
+                    <MudChipSet ReadOnly="false">
+                        @foreach (var item in media.Categories)
+                        {
+                            <MudChip Text="@item.Name"></MudChip>
+                        }
+                    </MudChipSet>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        @if (userOfUploader != null)
+                        {
+                            <MudAvatar Color="Color.Primary">
+                                @if (userOfUploader.ProfilePicture != null)
+                                {
+                                    <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
+                                }
+                                else
+                                {
+                                    @userOfUploader.UserName[0]
+                                }
+                            </MudAvatar>
+                            <MudText>
+                                @userOfUploader.UserName
+                            </MudText>
+                            <MudText Class="d-flex justify-end flex-grow-1">
+                                Uploaded by @media.DateUpload.ToString("d")
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px"></MudSkeleton>
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="150px"></MudSkeleton>
+                        }
+                    </MudStack>
+                </MudItem>
+            </MudPaper>
         }
         else
         {
@@ -244,7 +251,7 @@
             var delepost = await mediaFilesService.DeleteMediaViewModel(PostID);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);
             System.IO.File.Delete(path);
-            foreach (var item in delepost.Categories.Where(c=>c.Posts.Count()==0))
+            foreach (var item in media.Categories.Where(c => c.Posts.Count() == 0))
             {
                 await categoriesService.DeleteCategory(item.Id);
             }
@@ -262,7 +269,7 @@
 
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JS.InvokeVoidAsync("downloadFileFromStream", fileName+fileExtension, streamRef);
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName + fileExtension, streamRef);
     }
 
     private Stream GetFileStream()
