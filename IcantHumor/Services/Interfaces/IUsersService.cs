@@ -10,6 +10,7 @@ namespace IcantHumor.Services.Interfaces
         Task<UserViewModel> PutUser(Guid id, UserViewModel userViewModel);
         Task<UserViewModel> PostUser(UserViewModel userViewModel);
         Task<UserViewModel> DeleteUser(Guid id);
+        Task<bool> IsExistEmailUserInDB(string email);
         Task<bool> IsExistNameUserInDB(string UserName);
     }
 }

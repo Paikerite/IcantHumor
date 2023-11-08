@@ -40,7 +40,7 @@
                 </MudPaper>
             </MudItem>
             <MudPaper Width="100%">
-                <MudItem Class="d-flex justify-center" xs="12">
+                <MudItem Class="d-flex justify-center my-3" xs="12">
                     @if (media.TypeOfFile is TypeOfFile.Video)
                     {
                         <BlazoredVideo class="w-100"
@@ -56,15 +56,15 @@
                 </MudItem>
             </MudPaper>
             <MudPaper Width="100%" Class="mt-3">
-                <MudItem xs="12">
+                <MudItem xs="12" Class="mt-5 mx-4">
                     <MudChipSet ReadOnly="false">
                         @foreach (var item in media.Categories)
                         {
-                            <MudChip Text="@item.Name"></MudChip>
+                            <MudChip Href="@($"/?page=1&categories={item.Id}")" Text="@item.Name"></MudChip>
                         }
                     </MudChipSet>
                 </MudItem>
-                <MudItem xs="12">
+                <MudItem xs="12" Class="ma-5">
                     <MudStack Row="true" AlignItems="AlignItems.Center">
                         @if (userOfUploader != null)
                         {
@@ -160,33 +160,6 @@
 
     private async Task PutReact(React reaction)
     {
-        // try
-        // {
-        //     var user = await usersService.GetUserByName(authState.User.Identity.Name);
-        //     if (authState.User.Identity.IsAuthenticated)
-        //     {
-        //         if (!media.WhoReacted.Any(w => w.IdReactedUser == user.Id))
-        //         {
-        //             var changePost = await mediaFilesService.MakeReactionInPost(media.Id, new ReactedUserViewModel
-        //                 {
-        //                     IdReactedUser = user.Id,
-        //                     ChosenReact = reaction,
-        //                 });
-
-        //             media.WhoReacted = changePost.WhoReacted;
-        //         }
-        //         else
-        //         {
-        //             var whoReacted = media.WhoReacted.First(w => w.IdReactedUser == user.Id);
-        //             var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
-
-        //             //memes.First(m => m.Id == guidPost).WhoReacted
-        //             //    .Remove(memes
-        //             //        .First(m => m.Id == guidPost).WhoReacted
-        //             //        .First(a => a.Id == whoReacted.Id));
-        //             media.WhoReacted.Remove(media.WhoReacted.First(r=>r.Id == whoReacted.Id));
-        //         }
-        //     }
         try
         {
             if (authState.User.Identity.IsAuthenticated)
@@ -251,7 +224,7 @@
             var delepost = await mediaFilesService.DeleteMediaViewModel(PostID);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);
             System.IO.File.Delete(path);
-            foreach (var item in media.Categories.Where(c => c.Posts.Count() == 0))
+            foreach (var item in media.Categories.Where(c => c.Posts.Count() == 1)) //1, cuz need consider that Post related for this category already deleted in server, but media hadn't updated yet
             {
                 await categoriesService.DeleteCategory(item.Id);
             }

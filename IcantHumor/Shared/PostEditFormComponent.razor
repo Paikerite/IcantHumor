@@ -50,7 +50,7 @@
                             <MudStack AlignItems="AlignItems.Center" Row="true">
                                 <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="CategoryByUser" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
                                                  ShowProgressIndicator="true" CoerceText="false" ResetValueOnEmptyText="false" CoerceValue="true" MaxLength="25"
-                                                 Required="true" ProgressIndicatorColor="Color.Primary" />
+                                                 Required="true" ProgressIndicatorColor="Color.Primary" AnchorOrigin="Origin.BottomCenter" />
                                 <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
                             </MudStack>
                         </MudItem>

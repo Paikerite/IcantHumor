@@ -194,6 +194,11 @@
                 throw new Exception("Your Username is already taken, try another");
             }
 
+            if (await usersService.IsExistEmailUserInDB(userViewModel.UserEmail))
+            {
+                throw new Exception("Your Email is already taken, try another");
+            }
+
             var result = await usersService.PostUser(userViewModel);
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
             {

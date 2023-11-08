@@ -79,6 +79,13 @@ namespace IcantHumor.Services
             return await _context.Users.AnyAsync(u=>u.UserName == UserName);
         }
 
+        public async Task<bool> IsExistEmailUserInDB(string email)
+        {
+            if (_context.Users == null) { return false; }
+
+            return await _context.Users.AnyAsync(u=>u.UserEmail == email);
+        }
+
         public async Task<UserViewModel> PostUser(UserViewModel userViewModel)
         {
             if (_context.Users == null)
