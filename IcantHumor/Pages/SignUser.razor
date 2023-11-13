@@ -1,6 +1,7 @@
 ﻿@page "/SignUser"
+@implements IDisposable
 
-<EditForm Context="RegisterUser" Model="@model" OnValidSubmit="@OnValidLogin">
+<EditForm EditContext="EditContext" OnValidSubmit="@OnValidLogin">
     <DataAnnotationsValidator />
     <MudGrid Justify="Justify.Center">
         <MudItem xs="12" sm="5">
@@ -21,7 +22,7 @@
                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
-                <MudCardActions>
+                <MudCardActions Class="mx-3">
                     @if (isLoading)
                     {
                         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -29,7 +30,7 @@
                     else
                     {
                         <MudButton Href="/RegisterUser" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" @onmouseover="OnButtonPreventLogin" Style="@LoginButtonStyle" Class="ml-auto">@( TrollMode ? "Nope" : "Login" )</MudButton>
                     }
                 </MudCardActions>
             </MudCard>
@@ -65,10 +66,32 @@
 
     private LoginModel model = new();
 
+    private EditContext? EditContext { get; set; }
+
+    private string LoginButtonStyle { get; set; } = string.Empty;
+
+    private bool TrollMode { get; set; } = false;
+
     private bool isLoading { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        EditContext = new(model);
+        EditContext.OnValidationStateChanged += HandleValidation;
+    }
+
+    private void HandleValidation(object? sender, ValidationStateChangedEventArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(model.UserName) && !string.IsNullOrWhiteSpace(model.Password))
+        {
+            TrollMode = false;
+        }
+        EnableTrollMode();
+    }
 
     private async Task OnValidLogin(EditContext context)
     {
+        TrollMode = false;
         var model = (LoginModel)context.Model;
 
         isLoading = true;
@@ -99,5 +122,32 @@
             Snackbar.Add("Wrong password or email", Severity.Error);
         }
         isLoading = false;
+    }
+
+    private void OnButtonPreventLogin()
+    {
+        TrollMode = EditContext.Validate() ? false : true;
+        EnableTrollMode();
+    }
+
+    private void EnableTrollMode()
+    {
+        if (TrollMode)
+        {
+            Random random = new();
+            LoginButtonStyle = $"transition: transform .2s !important; transform: translateX({random.Next(-100, 50)}px) translateY({random.Next(-100, 100)}px);";
+        }
+        else
+        {
+            LoginButtonStyle = string.Empty;
+        }
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (EditContext is not null)
+        {
+            EditContext.OnValidationStateChanged -= HandleValidation;
+        }
     }
 }

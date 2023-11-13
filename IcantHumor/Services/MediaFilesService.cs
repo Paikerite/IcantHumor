@@ -1,8 +1,12 @@
 ﻿using Azure;
 using IcantHumor.Models;
 using IcantHumor.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace IcantHumor.Services
 {
@@ -329,6 +333,28 @@ namespace IcantHumor.Services
             {
                 var message = await products.Content.ReadAsStringAsync();
                 throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<MediaViewModel> UpdateTitlePost(Guid idPost, string title)
+        {
+            UpdateTitleMediaFiles model = new() { NewTitle = title };
+            var JsonRequest = JsonConvert.SerializeObject(model);
+            var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
+
+            var response = await httpClient.PatchAsync($"api/MediaFiles/UpdateTitlePost/{idPost}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<MediaViewModel>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                return default(MediaViewModel);
+            }
+            else
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{response.StatusCode}, message:{message}");
             }
         }
     }

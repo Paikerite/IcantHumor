@@ -1,4 +1,5 @@
 ﻿@page "/InfoUser/{UserID:guid}"
+@attribute [Authorize]
 
 @if (user == null)
 {
@@ -137,15 +138,14 @@ else
 
     private bool isLoading { get; set; } = false;
 
-    //private bool isShowSnackbarWarningSave { get; set; } = false;
-
     private const string KeyForSnackbar = "UnsavedWarning";
 
     private Snackbar WarningUnSavedInfo { get; set; }
 
-    private int maxFileSize = 1024 * 1024 * 2; // 2MB
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
 
-    //private IBrowserFile? ImageFile { get; set; }
+    private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
     private AuthenticationState authState { get; set; }
 
@@ -168,6 +168,10 @@ else
         {
             authState = await authenticationState;
             user = await usersService.GetUser(UserID);
+            if (user.UserName != authState.User.Identity.Name)
+            {
+                navigationManager.NavigateTo("/", replace: true);
+            }
         }
         catch (Exception ex)
         {

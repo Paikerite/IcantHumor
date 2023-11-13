@@ -7,7 +7,36 @@
         @if (media != null)
         {
             <MudItem xs="12">
-                <MudText Typo="Typo.h4">@media.Title</MudText>
+                @if (userOfUploader.UserName == authState.User.Identity.Name)
+                { 
+                    @if (isEditingTitle)
+                    {
+                        <MudGrid Class="d-flex align-center justify-center">
+                            <MudItem xs="10">
+                                <MudTextField @bind-Value="UpdatedTitle" Counter="50" MaxLength="50" Immediate="true" Label="Title" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Check" Disabled="@(UpdatedTitle == null || UpdatedTitle.Length < 3 ? true : false)" OnClick="EditTitle" Size="Size.Large" Color="Color.Success" aria-label="accept"></MudIconButton>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="EditTitleStatus" Color="Color.Error" Size="Size.Large" aria-label="decline"></MudIconButton>
+                            </MudItem>
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <MudBadge Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                            <MudButton OnClick="EditTitleStatus" Variant="Variant.Text">
+                                <MudText Typo="Typo.h4">@media.Title</MudText>
+                            </MudButton>
+                        </MudBadge>
+                    }
+
+                }
+                else
+                {
+                    <MudText Typo="Typo.h4">@media.Title</MudText>  
+                }
             </MudItem>
             <MudItem xs="12">
                 <MudPaper>
@@ -16,9 +45,9 @@
                             <Authorized>
                                 @if (userOfUploader.UserName == authState.User.Identity.Name)
                                 {
-                                    <MudTooltip Text="Edit" Placement="Placement.Top">
+@*                                     <MudTooltip Text="Edit" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
-                                    </MudTooltip>
+                                    </MudTooltip> *@
                                     <MudTooltip Text="Delete" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
                                     </MudTooltip>
@@ -144,6 +173,12 @@
 
     private UserViewModel userOfUploader { get; set; }
 
+    private bool isEditingTitle { get; set; } = false;
+
+    private string UpdatedTitle { get; set; }
+
+    private void EditTitleStatus() => isEditingTitle = !isEditingTitle;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -151,6 +186,7 @@
             authState = await authenticationState;
             media = await mediaFilesService.GetMediaViewModel(PostID);
             userOfUploader = await usersService.GetUser(media.IdOfCreator);
+            UpdatedTitle = media.Title;
         }
         catch (Exception ex)
         {
@@ -199,6 +235,34 @@
             else
             {
                 navigationManager.NavigateTo("/SignUser", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task EditTitle()
+    {
+        try
+        {
+            if (UpdatedTitle != null && UpdatedTitle.Length >= 3)
+            {
+                var res = await mediaFilesService.UpdateTitlePost(media.Id, UpdatedTitle);
+                if (res != null)
+                {
+                    media.Title = res.Title;
+                    EditTitleStatus();
+                }
+                else
+                {
+                    snackbar.Add("Failed to change the title, sorry, try again", Severity.Error);
+                }
+            }
+            else
+            {
+                snackbar.Add("Failed to change the title, minimum 3 symbols", Severity.Error);
             }
         }
         catch (Exception ex)

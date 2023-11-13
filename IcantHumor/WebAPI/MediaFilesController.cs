@@ -362,10 +362,10 @@ namespace IcantHumor.WebAPI
         [HttpPatch("UnMakeReactionInPost/{idPost}")]
         public async Task<ActionResult<MediaViewModel>> UnMakeReactionInPost(Guid idPost, Guid reactedUserId)
         {
-            if (reactedUserId == null)
-            {
-                return BadRequest();
-            }
+            //if (reactedUserId == null)
+            //{
+            //    return BadRequest();
+            //}
 
             try
             {
@@ -383,6 +383,32 @@ namespace IcantHumor.WebAPI
                 {
                     post.WhoReacted.Remove(reac);
                 }
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetMediaViewModel), new { id = post.Id }, post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Error retrieving data from the database: {e}");
+            }
+        }
+
+        // PATCH: api/MediaFiles/UpdateTitlePost/543-6-5-3ded/HelloWorld
+        [HttpPatch("UpdateTitlePost/{idPost}")]
+        public async Task<ActionResult<MediaViewModel>> UpdateTitlePost(Guid idPost, UpdateTitleMediaFiles title)
+        {
+            try
+            {
+                var post = await _context.MediaFiles.FindAsync(idPost);
+
+                if (post == null)
+                {
+                    return NotFound();
+                }
+
+                post.Title = title.NewTitle;
+
                 await _context.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetMediaViewModel), new { id = post.Id }, post);
