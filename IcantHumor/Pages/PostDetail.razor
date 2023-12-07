@@ -8,7 +8,7 @@
         {
             <MudItem xs="12">
                 @if (userOfUploader.UserName == authState.User.Identity.Name)
-                { 
+                {
                     @if (isEditingTitle)
                     {
                         <MudGrid Class="d-flex align-center justify-center">
@@ -28,14 +28,14 @@
                         <MudBadge Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
                             <MudButton OnClick="EditTitleStatus" Variant="Variant.Text">
                                 <MudText Typo="Typo.h4">@media.Title</MudText>
-                            </MudButton>
-                        </MudBadge>
+                                </MudButton>
+                            </MudBadge>
                     }
 
                 }
                 else
                 {
-                    <MudText Typo="Typo.h4">@media.Title</MudText>  
+                    <MudText Typo="Typo.h4">@media.Title</MudText>
                 }
             </MudItem>
             <MudItem xs="12">
@@ -45,24 +45,30 @@
                             <Authorized>
                                 @if (userOfUploader.UserName == authState.User.Identity.Name)
                                 {
-@*                                     <MudTooltip Text="Edit" Placement="Placement.Top">
-                                        <MudIconButton Variant="Variant.Filled" Href=@($"/PostEdit/{media.Id}") Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" />
-                                    </MudTooltip> *@
                                     <MudTooltip Text="Delete" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
                                     </MudTooltip>
                                 }
+                                <MudTooltip Text=@(isFavourite ? "Added to Favourite" : "Add to Favourite" ) Placement="Placement.Top">
+                                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@isFavourite" Color="Color.Primary" ToggledChanged="AddPostToFavorite" ToggledColor="Color.Primary"
+                                                         Icon="@Icons.Material.Filled.FavoriteBorder" Title="Off" aria-label="favourite"
+                                                         ToggledIcon="@Icons.Material.Filled.Favorite" ToggledTitle="On" />
+                                </MudTooltip>
                             </Authorized>
                         </AuthorizeView>
                         <div>
-                            <MudButton @onclick="()=>PutReact(React.Like)" Variant="Variant.Outlined" aria-label="kek">
-                                <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
-                                @media.Like
-                            </MudButton>
-                            <MudButton @onclick="()=>PutReact(React.Dislike)" Variant="Variant.Outlined" aria-label="cringe">
-                                <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
-                                @media.Dislike
-                            </MudButton>
+                            <MudTooltip Text="Funny" Placement="Placement.Top">
+                                <MudButton @onclick="()=>PutReact(React.Like)" Variant="Variant.Outlined" aria-label="kek">
+                                    <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
+                                    @media.Like
+                                </MudButton>
+                            </MudTooltip>
+                            <MudTooltip Text="UnFunny" Placement="Placement.Top">
+                                <MudButton @onclick="()=>PutReact(React.Dislike)" Variant="Variant.Outlined" aria-label="cringe">
+                                    <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
+                                    @media.Dislike
+                                </MudButton>
+                            </MudTooltip>
                         </div>
                         <MudButton Variant="Variant.Filled" @onclick="DownloadFileFromStream" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
                     </MudToolBar>
@@ -74,6 +80,7 @@
                     {
                         <BlazoredVideo class="w-100"
                                        style="max-width:720px;"
+                                       loop="loop"
                                        controls="controls">
                             <source src="@media.UrlToFile" type="video/mp4" />
                         </BlazoredVideo>
@@ -153,6 +160,9 @@
     private IMediaFilesService mediaFilesService { get; set; }
 
     [Inject]
+    private IFavouritesService favouritesService { get; set; }
+
+    [Inject]
     private ICategoriesService categoriesService { get; set; }
 
     [Inject]
@@ -175,6 +185,8 @@
 
     private bool isEditingTitle { get; set; } = false;
 
+    private bool isFavourite { get; set; }
+
     private string UpdatedTitle { get; set; }
 
     private void EditTitleStatus() => isEditingTitle = !isEditingTitle;
@@ -184,8 +196,17 @@
         try
         {
             authState = await authenticationState;
+            var userName = authState.User.Identity.Name;
             media = await mediaFilesService.GetMediaViewModel(PostID);
             userOfUploader = await usersService.GetUser(media.IdOfCreator);
+
+            if (userName != null)
+            {
+                var usersFavorites = await usersService.GetUserByName(userName);
+                usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
+                isFavourite = usersFavorites.Favourites.Any(a => a.IdPost == PostID);
+            }
+
             UpdatedTitle = media.Title;
         }
         catch (Exception ex)
@@ -269,6 +290,40 @@
         {
             snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
         }
+    }
+
+    private async Task AddPostToFavorite()
+    {
+        if (isFavourite)
+        {
+            var usersFavorites = await usersService.GetUserByName(authState.User.Identity.Name);
+            usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
+            var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
+            if (fav != null)
+            {
+                usersFavorites.Favourites.Remove(fav);
+                await usersService.PutUser(usersFavorites.Id, usersFavorites);
+                await favouritesService.DeleteFavourite(fav.Id);
+                isFavourite = false;
+            }
+        }
+        else
+        {
+            var usersFavorites = await usersService.GetUserByName(authState.User.Identity.Name);
+            usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
+            var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
+            if (fav == null)
+            {
+                usersFavorites.Favourites.Add(new FavouriteViewModel
+                    {
+                        IdReactedUser = usersFavorites.Id,
+                        IdPost = media.Id,
+                    });
+                await usersService.PutUser(usersFavorites.Id, usersFavorites);
+                isFavourite = true;
+            }
+        }
+
     }
 
     private async Task DeletePost()

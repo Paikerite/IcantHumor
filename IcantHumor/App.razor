@@ -18,11 +18,15 @@
             <LayoutView Layout="@typeof(MainLayout)">
                 <MudContainer MaxWidth="MaxWidth.ExtraLarge">
                     <div class="d-flex flex-grow-1 flex-column align-center">
-                        <div class="relative d-flex flex-grow-1 flex-column align-center" style="margin: auto;">
+                        @*                         <div class="relative d-flex flex-grow-1 flex-column align-center" style="margin: auto;">
+                        <MudImage Class="relative d-none d-sm-flex rounded-lg ma-4" Style="width:75%;" Src="staticimgs/backgroundForest.webp"></MudImage>
+                        <MudImage Class="absolute d-flex fixed" Style="width:75%; right: 200px; top:100px;" Src="staticimgs/CATSSITFIRE4x.webp"></MudImage>
+                        </div> *@
+                        <div class="relative d-flex flex-grow-1 flex-column align-center">
                             <MudImage Class="d-none d-sm-flex rounded-lg ma-4" Style="width:75%;" Src="staticimgs/backgroundForest.webp"></MudImage>
-                            <MudImage Class="d-flex fixed" Style="right: 50px; top:100px; width:25%;" Src="staticimgs/CATSSITFIRE4x.webp"></MudImage>
+                            <MudImage Class="d-flex justify-center" Style="width:25%; position: absolute; top: 60%; right: 25%;" Src="staticimgs/CATSSITFIRE4x.webp"></MudImage>
                         </div>
-                        <h2 role="alert">Have you lost?</h2>
+                        <h2 role="alert">There is nothing here... only cats.. Have you lost?</h2>
                         <MudLink Href="/">We can bring you back to home!</MudLink>
                     </div>
                 </MudContainer>

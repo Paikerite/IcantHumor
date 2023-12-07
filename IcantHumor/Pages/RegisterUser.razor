@@ -24,7 +24,7 @@
                             <MudTextField Label="Confirm password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png" OnFilesChanged="UploadFile">
+                            <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png, .jpg, .jpeg" OnFilesChanged="UploadFile">
                                 <ButtonTemplate>
                                     <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
                                         Upload image for avatar
@@ -34,6 +34,11 @@
                                     @if (context != null)
                                     {
                                         <MudText Class="mt-1" Align="Align.Center">@context.Name</MudText>
+                                        <div class="d-flex flex-grow-1 flex-column align-center">
+                                            <MudAvatar Size="Size.Large" Class="me-3" Color="Color.Primary">
+                                                <MudImage id="AvatarShowcase" Alt="Avatar" Class="rounded-lg" />
+                                            </MudAvatar>
+                                        </div>
                                     }
                                     else
                                     {
@@ -42,14 +47,6 @@
                                 </SelectedTemplate>
                             </MudFileUpload>
                         </MudItem>
-                        @*                        <MudItem xs="12" sm="5">
-                        @if (!string.IsNullOrEmpty(imageBase64))
-                        {
-                        <MudAvatar>
-                        <MudImage Src="@($"data:image/png;base64,{imageBase64}")" Alt="Uploaded Image" />
-                        </MudAvatar>
-                        }
-                        </MudItem>*@
                         <MudItem xs="12">
                             <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
                         </MudItem>
@@ -80,6 +77,9 @@
 
     [Inject]
     private ProtectedLocalStorage LocalStorage { get; set; }
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; }
@@ -113,14 +113,17 @@
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
-    private IBrowserFile? ImageFile { get; set; }
+    // private IBrowserFile? ImageFile { get; set; }
     //private string? imageBase64 { get; set; }
 
-    private void UploadFile(InputFileChangeEventArgs e)
+    private async Task UploadFile(InputFileChangeEventArgs e)
     {
         if (e.File.Size <= maxFileSize)
         {
-            ImageFile = e.File;
+            model.File = e.File;
+            var imageStream = model.File.OpenReadStream(maxFileSize);
+            var dotnetImageStream = new DotNetStreamReference(imageStream);
+            await JS.InvokeVoidAsync("setImage", "AvatarShowcase", dotnetImageStream);
             Snackbar.Add($"This file {e.File.Name} has upload succesfully");
         }
         else
@@ -132,7 +135,7 @@
 
     private async Task<string> CaptureFile()
     {
-        if (ImageFile == null)
+        if (model.File == null)
         {
             return null;
         }
@@ -141,7 +144,7 @@
             //ImageFiles.Clear();
             // e.GetMultipleFiles(maxAllowedFiles) for several files
             string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
-                                                      Path.GetExtension(ImageFile.Name));
+                                                      Path.GetExtension(model.File.Name));
 
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "AvatarsImages");
             if (!Directory.Exists(path))
@@ -154,8 +157,8 @@
 
 
             await using FileStream fs = new(absolutePath, FileMode.Create);
-            ImageFile = await ImageFile.RequestImageFileAsync(ImageFile.ContentType, 300, 300);
-            await ImageFile.OpenReadStream(maxFileSize).CopyToAsync(fs);
+            model.File = await model.File.RequestImageFileAsync(model.File.ContentType, 300, 300);
+            await model.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
 
             return relativePath;
         }
@@ -170,21 +173,25 @@
     {
         isLoading = true;
         string urlToFile = null;
-        if (ImageFile != null)
+
+        var model = (RegisterModel)context.Model;
+        if (model.File != null)
         {
             urlToFile = await CaptureFile();  
         }
 
-        var model = (RegisterModel)context.Model;
         UserViewModel userViewModel = new()
         {
             Role = Models.Enums.Roles.User,
             UserName = model.UserName,
-            UserEmail = model.UserEmail,
-            ConfirmEmail = false,
             ProfilePicture = urlToFile,
-            RegisteredAt = DateTime.Now,
-            Password = model.Password,
+            FullUserInfo = new()
+            {
+                UserEmail = model.UserEmail,
+                ConfirmEmail = false,
+                RegisteredAt = DateTime.Now,
+                Password = model.Password,
+            }
         };
 
         try
@@ -194,12 +201,13 @@
                 throw new Exception("Your Username is already taken, try another");
             }
 
-            if (await usersService.IsExistEmailUserInDB(userViewModel.UserEmail))
+            if (await usersService.IsExistEmailUserInDB(model.UserEmail))
             {
                 throw new Exception("Your Email is already taken, try another");
             }
 
             var result = await usersService.PostUser(userViewModel);
+
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
             {
                 Id = result.Id,

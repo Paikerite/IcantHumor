@@ -54,6 +54,7 @@ builder.Services.AddScoped(sp =>
 });
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IFavouritesService, FavouritesService>();
 builder.Services.AddScoped<IMediaFilesService, MediaFilesService>();
 builder.Services.AddScoped<ICategoriesService, CategoriesService>();
 builder.Services.AddScoped<IReactedUserService, ReactedUserService>();

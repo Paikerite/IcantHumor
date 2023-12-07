@@ -173,13 +173,11 @@
 
             MediaViewModel mediaViewModel = new();
 
-
-            mediaViewModel.IdOfCreator = user.Id;
+            // mediaViewModel.IdOfCreator = user.Id;
             mediaViewModel.Title = model.Title;
             mediaViewModel.UrlToFile = urlToFile;
             mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
             mediaViewModel.DateUpload = DateTime.Now;
-
 
             categories = await categoriesService.GetCategories();
             List<Guid> categoriesIdToAdd = new();
@@ -196,11 +194,7 @@
                 }
             }
 
-            MediaViewModel postResult = null;
-
-
-            postResult = await mediaFilesService.PostMediaViewModel(mediaViewModel);
-
+            MediaViewModel postResult = await mediaFilesService.PostMediaViewModel(mediaViewModel);
 
             if (postResult != null)
             {

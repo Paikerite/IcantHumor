@@ -33,13 +33,25 @@ namespace IcantHumor.Services
             return userViewModel;
         }
 
-        public async Task<UserViewModel> GetUser(Guid id)
+        public async Task<UserViewModel> GetUser(Guid id, bool FullInfo = false)
         {
             if (_context.Users == null)
             {
                 return null;
             }
-            var userViewModel = await _context.Users.FindAsync(id);
+
+            UserViewModel? userViewModel;
+            if (FullInfo)
+            {
+                userViewModel = await _context.Users.Include(u=>u.FullUserInfo)
+                                                    .Include(d=>d.Favourites)
+                                                    .FirstOrDefaultAsync(d=>d.Id == id);
+            }
+            else
+            {
+                userViewModel = await _context.Users.FindAsync(id);
+            }
+
             if (userViewModel == null)
             {
                 return null;
@@ -81,9 +93,9 @@ namespace IcantHumor.Services
 
         public async Task<bool> IsExistEmailUserInDB(string email)
         {
-            if (_context.Users == null) { return false; }
+            if (_context.Users == null) return false; 
 
-            return await _context.Users.AnyAsync(u=>u.UserEmail == email);
+            return await _context.FullInfoUsers.AnyAsync(u=>u.UserEmail == email);
         }
 
         public async Task<UserViewModel> PostUser(UserViewModel userViewModel)
@@ -111,12 +123,13 @@ namespace IcantHumor.Services
 
             if (user != null)
             {
-                user.UserEmail = userViewModel.UserEmail;
+                //user.UserEmail = userViewModel.UserEmail;
                 user.UserName = userViewModel.UserName;
-                user.Password = userViewModel.Password;
-                user.ConfirmEmail = userViewModel.ConfirmEmail;
+                //user.Password = userViewModel.Password;
+                //user.ConfirmEmail = userViewModel.ConfirmEmail;
                 user.ProfilePicture = userViewModel.ProfilePicture;
                 user.Role = userViewModel.Role;
+                user.FullUserInfo = userViewModel.FullUserInfo;
             }
 
             try

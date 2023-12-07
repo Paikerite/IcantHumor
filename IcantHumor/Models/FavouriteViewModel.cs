@@ -7,7 +7,7 @@ namespace IcantHumor.Models
     {
         [Key]
         public Guid Id { get; set; }
-
+        public Guid IdReactedUser { get; set; }
         public Guid IdPost { get; set; }
         [ForeignKey("IdPost")]
         public MediaViewModel? FavMedia { get; set; }

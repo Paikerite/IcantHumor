@@ -1,13 +1,11 @@
 ﻿@inherits LayoutComponentBase
 
-@* <PageTitle>IcantHumor</PageTitle> *@
-
 <MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="3" Class="d-flex justify-space-between flex-grow-1 gap-4">
+    <MudAppBar Elevation="3" Fixed="true" Class="d-flex justify-space-between flex-grow-1 gap-4" Style="background: rgba(33,33,33, 0.5) !important; backdrop-filter: blur(10px);">
         <MudStack Class="ml-3" Row="true">
             <MudImage Class="" Src="/staticimgs/ICANT1x.webp"></MudImage>
             <MudText Typo="Typo.h5">
@@ -16,7 +14,7 @@
         </MudStack>
         <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Row="true">
             <MudButton FullWidth="true" Target="_parent" Href="/" Variant="Variant.Text" Size="Size.Large">Home</MudButton>
-@*             <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large">Counter</MudButton>
+            @*             <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large">Counter</MudButton>
             <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large">FetchData</MudButton> *@
         </MudStack>
         <AuthorizeView>
@@ -47,7 +45,7 @@
                         }
                         else
                         {
-                            <MudMenuItem Href="@($"/InfoUser/{userViewModel.Id}")">Profile</MudMenuItem>    
+                            <MudMenuItem Href="@($"/InfoUser/{userViewModel.Id}")">Profile</MudMenuItem>
                         }
                         <MudMenuItem OnClick="Logout">Sign Out</MudMenuItem>
                     </ChildContent>
@@ -84,22 +82,32 @@
     public UserViewModel userViewModel { get; set; }
 
     MudTheme MyCustomTheme = new MudTheme()
-    {
-        PaletteDark = new PaletteDark()
         {
-            AppbarText = Colors.DeepPurple.Default,
-            PrimaryLighten = Colors.DeepPurple.Lighten2,
-            PrimaryDarken = Colors.DeepPurple.Darken1,
-            Primary = Colors.DeepPurple.Default,
-            Secondary = Colors.DeepPurple.Default,
-            TextSecondary = Colors.DeepPurple.Lighten5,
-            TextPrimary = Colors.DeepPurple.Lighten4,
-            TextDisabled = Colors.DeepPurple.Darken1,
-            Tertiary = Colors.DeepPurple.Lighten5,
-            //ActionDefault = Colors.DeepPurple.Default,
-            //Surface = Colors.DeepPurple.Default,
-        },
-    };
+            PaletteDark = new PaletteDark()
+            {
+                AppbarText = Colors.DeepPurple.Default,
+                PrimaryLighten = Colors.DeepPurple.Lighten2,
+                PrimaryDarken = Colors.DeepPurple.Darken1,
+                Primary = Colors.DeepPurple.Default,
+                Secondary = Colors.DeepPurple.Default,
+                TextSecondary = Colors.DeepPurple.Lighten5,
+                TextPrimary = Colors.DeepPurple.Lighten4,
+                TextDisabled = Colors.DeepPurple.Darken1,
+                Tertiary = Colors.DeepPurple.Lighten5,
+            },
+
+            Typography = new Typography()
+            {
+                Default = new Default()
+                {
+                    FontFamily = new[] { "Chakra Petch", "Jura" },
+                    FontSize = ".875rem",
+                    FontWeight = 200,
+                    LineHeight = 1.43,
+                    LetterSpacing = ".01071em"
+                }
+            },
+        };
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,7 +116,7 @@
             var authState = await authenticationState;
             if (authState.User.Identity.IsAuthenticated)
             {
-                userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);  
+                userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);
             }
         }
         catch (Exception ex)

@@ -11,7 +11,7 @@ else
 }
 <MudContainer>
     <MudGrid>
-        <MudItem xs="12" sm="2">
+        <MudItem xs="12" sm="3" md="2">
             <MudPaper Class="pa-3">
                 <MudStack Justify="Justify.Center">
                     @if (user == null)
@@ -40,25 +40,25 @@ else
                     {
                         <div>
                             <MudText Typo="Typo.h5" Color="Color.Secondary" Align="Align.Center">@user.UserName</MudText>
-                            <MudText Align="Align.Center">Joker</MudText>
-                        </div>
+                                <MudText Align="Align.Center">Joker</MudText>
+                            </div>
                         <div>
                             <MudText Typo="Typo.h5" Align="Align.Center">@user.Id</MudText>
-                            <MudText Align="Align.Center">GUID Number</MudText>
-                        </div>
+                                <MudText Align="Align.Center">GUID Number</MudText>
+                            </div>
                         <div>
-                            <MudText Typo="Typo.h5" Align="Align.Center">@user.RegisteredAt.ToString("d")</MudText>
-                            <MudText Align="Align.Center">Join Date</MudText>
-                        </div>
+                            <MudText Typo="Typo.h5" Align="Align.Center">@user.FullUserInfo.RegisteredAt.ToString("d")</MudText>
+                                <MudText Align="Align.Center">Join Date</MudText>
+                            </div>
                         <div>
                             <MudText Typo="Typo.h5" Align="Align.Center">@user.Role</MudText>
-                            <MudText Align="Align.Center">Rank</MudText>
-                        </div>
+                                <MudText Align="Align.Center">Rank</MudText>
+                            </div>
                     }
                 </MudStack>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" sm="10">
+        <MudItem xs="12" sm="9" md="4">
             <MudPaper Class="pa-3">
                 <EditForm Context="EditUser" Model="@model" OnValidSubmit="@OnValidEdit">
                     <DataAnnotationsValidator />
@@ -110,6 +110,32 @@ else
                 </EditForm>
             </MudPaper>
         </MudItem>
+        <MudItem xs="12" sm="12" md="6">
+            <MudPaper Class="pa-3">
+                <MudText Class="mb-3" Align="Align.Center">Favourites</MudText>
+                <MudCarousel Class="mud-width-full" Style="height:300px;" BulletsColor="Color.Primary" ShowArrows="true" ShowBullets="false" EnableSwipeGesture="true" AutoCycle="true" TData="object">
+                    @if (FavouritesRecentlyAdded != null)
+                    {
+                        foreach (var item in FavouritesRecentlyAdded)
+                        {
+                            <MudCarouselItem @onclick="()=>NavigateToSource(item.Id)" Transition="Transition.Fade" Color="@Color.Dark">
+                                <div class="d-flex justify-center" style="height:100%">
+                                    <MudImage Fluid="true" Src="@item.UrlToFile"></MudImage>
+                                </div>
+                            </MudCarouselItem>
+                        }
+                    }
+                    else
+                    {
+                        @* <MudCarouselItem Color="@Color.Dark"> *@
+                            <div class="d-flex" style="height:100%">
+                                <MudProgressCircular Size="@Size.Large" />
+                            </div>
+                        @* </MudCarouselItem> *@
+                    }
+                </MudCarousel>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 </MudContainer>
 
@@ -136,14 +162,19 @@ else
     [Inject]
     private IJSRuntime JS { get; set; }
 
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    private IFavouritesService favouritesService { get; set; }
+
+    private IEnumerable<MediaViewModel> FavouritesRecentlyAdded { get; set; }
+
     private bool isLoading { get; set; } = false;
 
     private const string KeyForSnackbar = "UnsavedWarning";
 
     private Snackbar WarningUnSavedInfo { get; set; }
-
-    [Inject]
-    private NavigationManager navigationManager { get; set; }
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
@@ -167,7 +198,9 @@ else
         try
         {
             authState = await authenticationState;
-            user = await usersService.GetUser(UserID);
+            user = await usersService.GetUser(UserID, true);
+            var favourites = await favouritesService.GetFavourites();
+            FavouritesRecentlyAdded = favourites.Take(8).Select(xd=>xd.FavMedia);
             if (user.UserName != authState.User.Identity.Name)
             {
                 navigationManager.NavigateTo("/", replace: true);
@@ -183,7 +216,7 @@ else
     {
         if (!string.IsNullOrEmpty(model.UserEmail) || !string.IsNullOrEmpty(model.UserName) || model.File != null)
         {
-            WarningUnSavedInfo = Snackbar.Add("You haven't save the changes!", Severity.Error, config =>
+            WarningUnSavedInfo = Snackbar.Add("Don't forget save the changes!", Severity.Warning, config =>
             {
                 config.VisibleStateDuration = int.MaxValue;
                 config.ShowCloseIcon = false;
@@ -196,6 +229,11 @@ else
         }
     }
 
+    private void NavigateToSource(Guid guid)
+    {
+        navigationManager.NavigateTo($"/PostDetail/{guid}", true);
+    }
+
     private async Task OnValidEdit(EditContext context)
     {
         isLoading = true;
@@ -206,27 +244,21 @@ else
         if (model.File != null)
         {
             urlToFile = await CaptureFile();
+            oldAvatarImgToDelete = user.ProfilePicture;
         }
-        UserViewModel userViewModel = new()
-            {
-                ConfirmEmail = user.ConfirmEmail,
-                Id = user.Id,
-                Password = user.Password,
-                Role = user.Role,
-                UserName = model.UserName != null ? model.UserName : user.UserName,
-                UserEmail = model.UserEmail != null ? model.UserEmail : user.UserEmail,
-                ProfilePicture = urlToFile != null ? urlToFile : user.ProfilePicture,
-            };
+
+        user.UserName = model.UserName != null ? model.UserName : user.UserName;
+        user.FullUserInfo.UserEmail = model.UserEmail != null ? model.UserEmail : user.FullUserInfo.UserEmail;
+        user.ProfilePicture = urlToFile != null ? urlToFile : user.ProfilePicture;
 
         try
         {
-            if (await usersService.IsExistNameUserInDB(userViewModel.UserName) && userViewModel.UserName != authState.User.Identity.Name)
+            if (await usersService.IsExistNameUserInDB(user.UserName) && user.UserName != authState.User.Identity.Name)
             {
-                throw new Exception("Your Username is already taken, try another");
+                throw new Exception("This Username was already taken, try another");
             }
-            oldAvatarImgToDelete = user.ProfilePicture;
 
-            var result = await usersService.PutUser(user.Id, userViewModel);
+            var result = await usersService.PutUser(user.Id, user);
             if (result != null)
             {
                 if (oldAvatarImgToDelete != null)

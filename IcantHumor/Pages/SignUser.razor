@@ -12,7 +12,7 @@
                             <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Login</b></MudText>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            <MudTextField Label="Login" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
@@ -95,32 +95,42 @@
         var model = (LoginModel)context.Model;
 
         isLoading = true;
+
         var result = await usersService.GetUserByName(model.UserName);
 
-        if (result != null && result.Password == model.Password)
+        if (result != null)
         {
-            try
+            result = await usersService.GetUser(result.Id, true);
+            if (result.FullUserInfo != null && result.FullUserInfo.Password == model.Password)
             {
-                var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
-                    {
-                        Id = result.Id,
-                        Role = result.Role,
-                        UserName = result.UserName,
-                    }, model.Remember);
-                await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
-                await authenticationStateProvider.GetAuthenticationStateAsync();
-                navigationManager.NavigateTo("/", true);
-            }
+                try
+                {
+                    var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                        {
+                            Id = result.Id,
+                            Role = result.Role,
+                            UserName = result.UserName,
+                        }, model.Remember);
+                    await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+                    await authenticationStateProvider.GetAuthenticationStateAsync();
+                    navigationManager.NavigateTo("/", true);
+                }
 
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+                }
+            }
+            else
             {
-                Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+                Snackbar.Add("Wrong password or login", Severity.Error);
             }
         }
         else
         {
-            Snackbar.Add("Wrong password or email", Severity.Error);
+            Snackbar.Add("Wrong password or login", Severity.Error);
         }
+
         isLoading = false;
     }
 

@@ -1,5 +1,4 @@
-﻿@* @page "/{SearchName?}/{page:int?}/{*categoriesStr}" *@
-@page "/"
+﻿@page "/"
 
 <PageTitle>Treasure</PageTitle>
 
@@ -53,25 +52,25 @@
 <MudGrid>
     <MudItem xs="12" sm="7" md="8">
         <MudChipSet Filter="true" @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
-        @if (categories != null && !isLoadingCategory)
-        {
-            @foreach (var item in categories)
+            @if (categories != null && !isLoadingCategory)
             {
-                if (selectedCategoryGuidsByUrl != null && selectedCategoryGuidsByUrl.Contains(item.Id))
+                @foreach (var item in categories)
                 {
-                    <MudChip Class="w-100 flex-none" Value="@item.Id" Default="true" Text="@item.Name"></MudChip>
-                }
-                else
-                {
-                    <MudChip Class="w-100 flex-none" Value="@item.Id" Text="@item.Name"></MudChip>
+                    if (selectedCategoryGuidsByUrl != null && selectedCategoryGuidsByUrl.Contains(item.Id))
+                    {
+                        <MudChip Class="w-100 flex-none" Value="@item.Id" Default="true" Text="@item.Name"></MudChip>
+                    }
+                    else
+                    {
+                        <MudChip Class="w-100 flex-none" Value="@item.Id" Text="@item.Name"></MudChip>
+                    }
                 }
             }
-        }
-        else
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-        }
-    </MudChipSet>
+            else
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+        </MudChipSet>
     </MudItem>
     <MudItem xs="12" sm="5" md="4">
         <MudTextField @bind-Value="SearchCategory" @bind-Value:after="SearchCategories" Label="Search category" Variant="Variant.Outlined" Adornment="Adornment.End" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
@@ -98,6 +97,14 @@
         }
 
     }
+    else if (memes.Count() == 0)
+    {
+        <MudItem xs="12" sm="6" md="3">
+            <MudText Align="Align.Center" Typo="Typo.h4">
+                ...Nothing here...
+            </MudText>
+        </MudItem>
+    }
     else
     {
         @foreach (var item in memes)
@@ -105,7 +112,6 @@
             <MudItem xs="12" sm="6" md="3">
                 <MudCard Class="border-solid">
                     <MudLink Href="@($"/PostDetail/{item.Id}")" Color="Color.Tertiary" Underline="Underline.None">
-                        @*<MudCardMedia Image="@(item.UrlToFile.Replace(@"\", "/"))"/>*@
                         <MudCardContent>
                             <MudBadge Content="item.TypeOfFile.ToString()" Color="Color.Primary" Overlap="true">
                                 @if (item.TypeOfFile is TypeOfFile.Video)
@@ -122,18 +128,23 @@
                                     <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
                                 }
                                 <MudText Typo="Typo.h6">@item.Title</MudText>
-                            </MudBadge>
-                        </MudCardContent>
-                    </MudLink>
-                    <MudCardActions>
-                        <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
-                            <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
-                            @item.Like
-                        </MudButton>
-                        <MudButton @onclick="()=>PutReact(React.Dislike, item.Id)" Variant="Variant.Text" aria-label="cringe">
-                            <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
-                            @item.Dislike
-                        </MudButton>
+                                </MudBadge>
+                            </MudCardContent>
+                        </MudLink>
+                        <MudCardActions Class="d-flex justify-space-between">
+                        <div>
+                            <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
+                                <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
+                                @item.Like
+                            </MudButton>
+                            <MudButton @onclick="()=>PutReact(React.Dislike, item.Id)" Variant="Variant.Text" aria-label="cringe">
+                                <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
+                                @item.Dislike
+                            </MudButton>
+                        </div>
+@*                         <MudToggleIconButton Variant="Variant.Text" Color="Color.Primary" ToggledColor="Color.Primary"
+                                             Icon="@Icons.Material.Filled.Favorite" Title="Off" aria-label="favourite"
+                                             ToggledIcon="@Icons.Material.Filled.FavoriteBorder" ToggledTitle="On" /> *@
                     </MudCardActions>
                 </MudCard>
             </MudItem>

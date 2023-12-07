@@ -13,7 +13,6 @@ namespace IcantHumor.Models
         public string Title { get; set; }
         [Required]
         public string UrlToFile { get; set; }
-        //Put like or dislike
         public int Like
         {
             get
@@ -32,8 +31,6 @@ namespace IcantHumor.Models
         public DateTime DateUpload { get; set; }
         public List<CategoryViewModel> Categories { get; set; } = new();
         public List<ReactedUserViewModel> WhoReacted { get; set; } = new();
-
-        //[ForeignKey("IdOfCreator")]
-        //public UserViewModel UserCreator { get; set; }
+        //public List<FavouriteViewModel> UsersFavourites { get; set; } = new();
     }
 }
