@@ -1,5 +1,6 @@
 ﻿using Azure;
 using IcantHumor.Models;
+using IcantHumor.Models.Enums;
 using IcantHumor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
@@ -66,11 +67,11 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds)
+        public async Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds, Sort sorting)
         {
             string content = string.Join("&", categoriesIds);
 
-            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{content}");
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{content}/{sorting}");
             if (products.IsSuccessStatusCode)
             {
                 return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
@@ -86,9 +87,9 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage)
+        public async Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage, Sort sorting)
         {
-            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaPerPage/{page}/{itemsPerPage}");
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaPerPage/{page}/{itemsPerPage}/{sorting}");
             if (products.IsSuccessStatusCode)
             {
                 return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
@@ -300,9 +301,9 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage)
+        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage, Sort sorting)
         {
-            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}");
+            var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}/{sorting}");
             if (products.IsSuccessStatusCode)
             {
                 return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();

@@ -101,5 +101,41 @@ namespace IcantHumor.Services
                 throw new Exception($"http status:{response.StatusCode}, message:{message}");
             }
         }
+
+        public async Task<IEnumerable<FavouriteViewModel>> GetFavouritesByUser(Guid idUser)
+        {
+            var products = await this.httpClient.GetAsync($"api/Favourites/GetFavouritesByUser/{idUser}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<FavouriteViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<FavouriteViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
+        public async Task<IEnumerable<FavouriteViewModel>> GetCountFavouritesByUser(Guid idUser, int countFav)
+        {
+            var products = await this.httpClient.GetAsync($"api/Favourites/GetCountFavouritesByUser/{idUser}/{countFav}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<FavouriteViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<FavouriteViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
     }
 }

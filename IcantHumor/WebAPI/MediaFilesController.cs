@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IcantHumor.Data;
 using IcantHumor.Models;
-using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using IcantHumor.Models.Enums;
 
 namespace IcantHumor.WebAPI
 {
@@ -111,75 +105,113 @@ namespace IcantHumor.WebAPI
             return Ok(mediaViewModel);
         }
 
-        //GET: api/MediaFiles/GetMediaPerPage/2/8
-        [HttpGet("GetMediaPerPage/{page}/{itemsPerPage}")]
-        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaPerPage(int page, int itemsPerPage)
+        //GET: api/MediaFiles/GetMediaPerPage/2/8/2
+        [HttpGet("GetMediaPerPage/{page}/{itemsPerPage}/{sorting}")]
+        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaPerPage(int page, int itemsPerPage, Sort sorting)
         {
             if (_context.MediaFiles == null)
             {
                 return NotFound();
             }
-            if (page == 0 || page == 1)
-            {
-                return Ok(await _context.MediaFiles
-                        .OrderByDescending(c => c.DateUpload)
-                        .AsSingleQuery()
-                        .Include(c => c.Categories)
-                        .Include(r => r.WhoReacted)
-                        .Take(itemsPerPage)
-                        .ToListAsync());
 
+            IQueryable<MediaViewModel> query = _context.MediaFiles.AsSingleQuery()
+                .Include(c => c.Categories)
+                .Include(r => r.WhoReacted);
+
+            switch (sorting)
+            {
+                case Sort.Rating: //Like attribute is client side parameter that cannot be init in LINQ
+                    query = query.OrderByDescending(a => a.WhoReacted.Where(w => w.ChosenReact == React.Like).Count());
+                    break;
+                case Sort.DateUploadingUp:
+                    query = query.OrderByDescending(a => a.DateUpload);
+                    break;
+                case Sort.DateUploadingDown:
+                    query = query.OrderBy(a => a.DateUpload);
+                    break;
+                default:
+                    return BadRequest();
             }
-            else
+
+            if (page > 1)
             {
                 int index = page * itemsPerPage - itemsPerPage;
-                return Ok(await _context.MediaFiles
-                        .OrderByDescending(c => c.DateUpload)
-                        .AsSingleQuery()
-                        .Include(c => c.Categories)
-                        .Include(r => r.WhoReacted)
-                        .Skip(index).Take(itemsPerPage)
-                        .ToListAsync());
+                query = query.Skip(index);
             }
+
+            return Ok(await query.Take(itemsPerPage).ToListAsync());
         }
 
-        //GET: api/MediaFiles/GetCategorizedMediaPerPage/2/8/546&5395&384
-        [HttpGet("GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{categoriesStr}")]
-        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetCategorizedMediaPerPage(int page, int itemsPerPage, string categoriesStr)
+        //GET: api/MediaFiles/GetCategorizedMediaPerPage/2/8/546&5395&384/2
+        [HttpGet("GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{categoriesStr}/{sorting}")]
+        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetCategorizedMediaPerPage(int page, int itemsPerPage, string categoriesStr, Sort sorting)
         {
-            if (_context.MediaFiles == null)
-            {
-                return NotFound();
-            }
+            //if (_context.MediaFiles == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //if (page == 0 || page == 1)
+            //{
+            //    return Ok(await _context.MediaFiles
+            //        .OrderByDescending(c => c.DateUpload)
+            //            .AsSingleQuery()
+            //            .Include(c => c.Categories)
+            //            .Include(r => r.WhoReacted)
+            //            .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
+            //            .Take(itemsPerPage)
+            //            .ToListAsync());
+
+            //}
+            //else
+            //{
+            //    int index = page * itemsPerPage - itemsPerPage;
+            //    return Ok(await _context.MediaFiles
+            //        .OrderByDescending(c => c.DateUpload)
+            //            .AsSingleQuery()
+            //            .Include(c => c.Categories)
+            //            .Include(r => r.WhoReacted)
+            //            .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
+            //            .Skip(index).Take(itemsPerPage)
+            //            .ToListAsync());
+            //}
 
             var categoryGuids = categoriesStr.Split('&')
                                 .Select(s => Guid.Parse(s))
                                 .ToList();
 
-            if (page == 0 || page == 1)
+            if (_context.MediaFiles == null)
             {
-                return Ok(await _context.MediaFiles
-                    .OrderByDescending(c => c.DateUpload)
-                        .AsSingleQuery()
-                        .Include(c => c.Categories)
-                        .Include(r => r.WhoReacted)
-                        .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
-                        .Take(itemsPerPage)
-                        .ToListAsync());
-
+                return NotFound();
             }
-            else
+
+            IQueryable<MediaViewModel> query = _context.MediaFiles.AsSingleQuery()
+                .Include(c => c.Categories)
+                .Include(r => r.WhoReacted)
+                .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)));
+
+            switch (sorting)
+            {
+                case Sort.Rating: //Like attribute is client side parameter that cannot be init in LINQ
+                    query = query.OrderByDescending(a => a.WhoReacted.Where(w => w.ChosenReact == React.Like).Count());
+                    break;
+                case Sort.DateUploadingUp:
+                    query = query.OrderByDescending(a => a.DateUpload);
+                    break;
+                case Sort.DateUploadingDown:
+                    query = query.OrderBy(a => a.DateUpload);
+                    break;
+                default:
+                    return BadRequest();
+            }
+
+            if (page > 1)
             {
                 int index = page * itemsPerPage - itemsPerPage;
-                return Ok(await _context.MediaFiles
-                    .OrderByDescending(c => c.DateUpload)
-                        .AsSingleQuery()
-                        .Include(c => c.Categories)
-                        .Include(r => r.WhoReacted)
-                        .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
-                        .Skip(index).Take(itemsPerPage)
-                        .ToListAsync());
+                query = query.Skip(index);
             }
+
+            return Ok(await query.Take(itemsPerPage).ToListAsync());
         }
 
         //GET: api/MediaFiles/GetMediaFilesByCategories/
@@ -229,9 +261,9 @@ namespace IcantHumor.WebAPI
             return Ok(posts);
         }
 
-        //GET: api/MediaFiles/GetMediaFilesByNameByPages/egg/2/8
-        [HttpGet("GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}")]
-        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage)
+        //GET: api/MediaFiles/GetMediaFilesByNameByPages/egg/2/8/2
+        [HttpGet("GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}/{sorting}")]
+        public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage, Sort sorting)
         {
             if (_context.MediaFiles == null)
             {
@@ -243,31 +275,60 @@ namespace IcantHumor.WebAPI
                 return CreatedAtAction(nameof(GetMediaPerPage), page, itemsPerPage);
             }
 
-            if (page == 0 || page == 1)
+            //if (page == 0 || page == 1)
+            //{
+            //    return(await _context.MediaFiles
+            //        .OrderByDescending(c => c.DateUpload)
+            //        .AsSingleQuery()
+            //        .Include(r => r.WhoReacted)
+            //        .Include(c => c.Categories)
+            //        .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+            //        m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
+            //        .Take(itemsPerPage)
+            //        .ToListAsync());
+            //}
+            //else
+            //{
+            //    int index = page * itemsPerPage - itemsPerPage;
+            //    return Ok(await _context.MediaFiles
+            //        .OrderByDescending(c => c.DateUpload)
+            //        .AsSingleQuery()
+            //        .Include(r => r.WhoReacted)
+            //        .Include(c => c.Categories)
+            //        .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+            //        m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
+            //        .Skip(index).Take(itemsPerPage)
+            //        .ToListAsync());
+            //}
+
+            IQueryable<MediaViewModel> query = _context.MediaFiles.AsSingleQuery()
+                .Include(c => c.Categories)
+                .Include(r => r.WhoReacted)
+                .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
+                m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())));
+
+            switch (sorting)
             {
-                return(await _context.MediaFiles
-                    .OrderByDescending(c => c.DateUpload)
-                    .AsSingleQuery()
-                    .Include(r => r.WhoReacted)
-                    .Include(c => c.Categories)
-                    .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
-                    m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
-                    .Take(itemsPerPage)
-                    .ToListAsync());
+                case Sort.Rating: //Like attribute is client side parameter that cannot be init in LINQ
+                    query = query.OrderByDescending(a => a.WhoReacted.Where(w => w.ChosenReact == React.Like).Count());
+                    break;
+                case Sort.DateUploadingUp:
+                    query = query.OrderByDescending(a => a.DateUpload);
+                    break;
+                case Sort.DateUploadingDown:
+                    query = query.OrderBy(a => a.DateUpload);
+                    break;
+                default:
+                    return BadRequest();
             }
-            else
+
+            if (page > 1)
             {
                 int index = page * itemsPerPage - itemsPerPage;
-                return Ok(await _context.MediaFiles
-                    .OrderByDescending(c => c.DateUpload)
-                    .AsSingleQuery()
-                    .Include(r => r.WhoReacted)
-                    .Include(c => c.Categories)
-                    .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
-                    m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
-                    .Skip(index).Take(itemsPerPage)
-                    .ToListAsync());
+                query = query.Skip(index);
             }
+
+            return Ok(await query.Take(itemsPerPage).ToListAsync());
         }
 
         // GET: api/MediaFiles/GetMediaFilesByCategory/5

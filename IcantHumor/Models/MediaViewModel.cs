@@ -13,6 +13,7 @@ namespace IcantHumor.Models
         public string Title { get; set; }
         [Required]
         public string UrlToFile { get; set; }
+        //Like and Dislike is client-side attribute and cannot be used in entityFramework
         public int Like
         {
             get

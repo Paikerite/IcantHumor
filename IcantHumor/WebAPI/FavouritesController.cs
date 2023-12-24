@@ -20,7 +20,7 @@ namespace IcantHumor.WebAPI
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FavouriteViewModel>>> GetFavourites()
         {
-            return await _context.Favourites.Include(a=>a.FavMedia).ToListAsync();
+            return await _context.Favourites.ToListAsync();
         }
 
         // GET: api/Favourites/5
@@ -28,6 +28,39 @@ namespace IcantHumor.WebAPI
         public async Task<ActionResult<FavouriteViewModel>> GetFavouriteViewModel(Guid id)
         {
             var favouriteViewModel = await _context.Favourites.FindAsync(id);
+
+            if (favouriteViewModel == null)
+            {
+                return NotFound();
+            }
+
+            return favouriteViewModel;
+        }
+
+        [HttpGet("GetCountFavouritesByUser/{idUser}/{countFav}")]
+        public async Task<ActionResult<IEnumerable<FavouriteViewModel>>> GetCountFavouritesByUser(Guid idUser, int countFav)
+        {
+            var favouriteViewModel = await _context.Favourites
+                .Include(b=>b.FavMedia)
+                .Where(a=> a.IdReactedUser == idUser)
+                .Take(countFav)
+                .ToListAsync();
+
+            if (favouriteViewModel == null)
+            {
+                return NotFound();
+            }
+
+            return favouriteViewModel;
+        }
+
+        [HttpGet("GetFavouritesByUser/{idUser}")]
+        public async Task<ActionResult<IEnumerable<FavouriteViewModel>>> GetFavouritesByUser(Guid idUser)
+        {
+            var favouriteViewModel = await _context.Favourites
+                .Include(b => b.FavMedia)
+                .Where(a => a.IdReactedUser == idUser)
+                .ToListAsync();
 
             if (favouriteViewModel == null)
             {

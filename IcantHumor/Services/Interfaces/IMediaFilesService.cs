@@ -1,4 +1,5 @@
 ﻿using IcantHumor.Models;
+using IcantHumor.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IcantHumor.Services.Interfaces
@@ -8,9 +9,9 @@ namespace IcantHumor.Services.Interfaces
         Task<IEnumerable<MediaViewModel>> GetMediaFiles();
         Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories);
         Task<IEnumerable<MediaViewModel>> GetMediaFilesByName(string SearchText);
-        Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage);
-        Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage);
-        Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds);
+        Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage, Sort sorting);
+        Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage, Sort sorting);
+        Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds, Sort sorting);
         Task<int> GetCountMediaFiles();
         Task<int> GetCountMediaFilesIncludeCategories(IEnumerable<Guid> categoriesIds);
         Task<int> GetCountMediaFilesBySearch(string SearchText);

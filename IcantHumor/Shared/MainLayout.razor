@@ -14,8 +14,12 @@
         </MudStack>
         <MudStack Class="flex-grow-1 justify-space-around rounded ms-15 me-15" Row="true">
             <MudButton FullWidth="true" Target="_parent" Href="/" Variant="Variant.Text" Size="Size.Large">Home</MudButton>
-            @*             <MudButton FullWidth="true" Href="/Counter" Variant="Variant.Text" Size="Size.Large">Counter</MudButton>
-            <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large">FetchData</MudButton> *@
+            <AuthorizeView>
+                <Authorized>
+                    <MudButton FullWidth="true" Target="_parent" Href="/Favourites" Variant="Variant.Text" Size="Size.Large">Favourites</MudButton>
+                </Authorized>
+            </AuthorizeView>
+            @* <MudButton FullWidth="true" Href="/FetchData" Variant="Variant.Text" Size="Size.Large">FetchData</MudButton> *@
         </MudStack>
         <AuthorizeView>
             <Authorized>
@@ -57,8 +61,13 @@
         </AuthorizeView>
     </MudAppBar>
     <MudMainContent Class="mt-3">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+        <MudContainer Fixed="true" MaxWidth="MaxWidth.ExtraLarge">
             @Body
+        </MudContainer>
+    </MudMainContent>
+    <MudMainContent Class="flex-grow-0">
+        <MudContainer Fixed="true">
+            <Footer/>
         </MudContainer>
     </MudMainContent>
 </MudLayout>

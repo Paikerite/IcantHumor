@@ -118,22 +118,24 @@ else
                     {
                         foreach (var item in FavouritesRecentlyAdded)
                         {
-                            <MudCarouselItem @onclick="()=>NavigateToSource(item.Id)" Transition="Transition.Fade" Color="@Color.Dark">
-                                <div class="d-flex justify-center" style="height:100%">
-                                    <MudImage Fluid="true" Src="@item.UrlToFile"></MudImage>
-                                </div>
-                            </MudCarouselItem>
+                            if (item.FavMedia.TypeOfFile == TypeOfFile.Img || item.FavMedia.TypeOfFile == TypeOfFile.Gif)
+                            {
+                                <MudCarouselItem @onclick="()=>NavigateToSource(item.FavMedia.Id)" Transition="Transition.Fade" Color="@Color.Dark">
+                                    <div class="d-flex justify-center" style="height:100%">
+                                        <MudImage Fluid="true" Src="@item.FavMedia.UrlToFile"></MudImage>
+                                    </div>
+                                </MudCarouselItem>
+                            }
                         }
                     }
                     else
                     {
-                        @* <MudCarouselItem Color="@Color.Dark"> *@
-                            <div class="d-flex" style="height:100%">
-                                <MudProgressCircular Size="@Size.Large" />
-                            </div>
-                        @* </MudCarouselItem> *@
+                        <div class="d-flex" style="height:100%">
+                            <MudProgressCircular Size="@Size.Large" />
+                        </div>
                     }
                 </MudCarousel>
+                <MudLink Class="d-flex justify-end flex-grow-1" Href="/Favourites" Typo="Typo.caption">All favourites</MudLink>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -168,7 +170,7 @@ else
     [Inject]
     private IFavouritesService favouritesService { get; set; }
 
-    private IEnumerable<MediaViewModel> FavouritesRecentlyAdded { get; set; }
+    private IEnumerable<FavouriteViewModel> FavouritesRecentlyAdded { get; set; }
 
     private bool isLoading { get; set; } = false;
 
@@ -199,8 +201,8 @@ else
         {
             authState = await authenticationState;
             user = await usersService.GetUser(UserID, true);
-            var favourites = await favouritesService.GetFavourites();
-            FavouritesRecentlyAdded = favourites.Take(8).Select(xd=>xd.FavMedia);
+            FavouritesRecentlyAdded = await favouritesService.GetCountFavouritesByUser(UserID, 8);
+
             if (user.UserName != authState.User.Identity.Name)
             {
                 navigationManager.NavigateTo("/", replace: true);

@@ -1,0 +1,154 @@
+﻿@page "/Favourites"
+@attribute [Authorize]
+
+<PageTitle>Your Treasure</PageTitle>
+
+<MudContainer>
+    <MudGrid>
+        <MudItem xs="12" sm="7" md="8">
+            @if (FavouritesMemes == null && chosenFavMeme == null)
+            {
+                <MudCard>
+                    <MudCardContent>
+                        <MudSkeleton Height="42px;" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="720px" Height="720px" />
+                    </MudCardContent>
+                    <MudCardActions>
+                    </MudCardActions>
+                </MudCard>
+            }
+            else if (FavouritesMemes.Count() == 0)
+            {
+                <MudText Align="Align.Center" Typo="Typo.h4">
+                    You don't have favourites media
+                </MudText>
+            }
+            else
+            {
+                var item = FavouritesMemes.FirstOrDefault(a => a.Id == (Guid)chosenFavMeme).FavMedia;
+
+                <MudCard Class="border-solid" Style="max-width:720px;">
+                    <MudCardContent>
+                        <MudLink Href="@($"/PostDetail/{item.Id}")" Color="Color.Tertiary" Underline="Underline.None">
+                            <MudText Typo="Typo.h4" Color="Color.Secondary" Class="mb-3">@item.Title</MudText>
+                        </MudLink>
+                        <MudBadge Content="item.TypeOfFile.ToString()" Color="Color.Primary" Overlap="true">
+                        @if (item.TypeOfFile is TypeOfFile.Video)
+                        {
+                            <BlazoredVideo class="w-100 rounded-lg"
+                                            style="width:720px;"
+                                            controls="controls"
+                                            loop="loop">
+                                <source src="@item.UrlToFile" type="video/mp4" />
+                            </BlazoredVideo>
+                        }
+                        else
+                        {
+                            <MudImage Fluid="true" Width="720" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
+                        }
+                        </MudBadge>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">
+                    </MudCardActions>
+                </MudCard>
+            }
+        </MudItem>
+        <MudItem xs="12" sm="5" md="4">
+            <MudPaper>
+                <MudList Clickable="true" @bind-SelectedItem="selectedItem" @bind-SelectedValue="chosenFavMeme">
+                    <MudListSubheader>
+                        <MudText>Your favourites</MudText>
+                    </MudListSubheader>
+                    @if (FavouritesMemes != null)
+                    {
+                        if (FavouritesMemes.Count() == 0)
+                        {
+                            <MudListItem>
+                                <MudImage Width="200" Src="/staticimgs/spiderweb.png" />
+                            </MudListItem>
+                        }
+                        else
+                        {
+                            @foreach (var item in FavouritesMemes)
+                            {
+                                <MudListItem Value="@item.Id">
+                                    <MudStack Row="true">
+                                        @if (item.FavMedia.TypeOfFile == TypeOfFile.Video)
+                                        {
+                                            <MudAvatar Square="true" Class="rounded-lg">
+                                                <MudIcon Icon="@Icons.Material.Filled.VideoFile"/>
+                                            </MudAvatar>
+                                        }
+                                        else
+                                        {
+                                            <MudImage Width="40" Src="@item.FavMedia.UrlToFile" Class="rounded-lg" />
+                                        }
+                                        <MudText>@item.FavMedia.Title</MudText>
+                                        </MudStack>
+                                    </MudListItem>
+                            }         
+                        }
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < 5; i++)
+                        {
+                             <MudListItem>
+                                <MudStack Row="true">
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="50px" Width="50px" />
+                                    <MudSkeleton Width="250px"/>
+                                </MudStack>
+                             </MudListItem>
+                        }
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "userID")]
+    public Guid? UserId { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    [Inject]
+    private IFavouritesService favouritesService { get; set; }
+
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    private IEnumerable<FavouriteViewModel> FavouritesMemes { get; set; }
+
+    MudListItem selectedItem;
+
+    private object chosenFavMeme { get; set; }
+
+    private UserViewModel user { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await authenticationState;
+            user = await usersService.GetUserByName(authState.User.Identity.Name);
+            FavouritesMemes = await favouritesService.GetFavouritesByUser(user.Id);
+            if (FavouritesMemes.Count()>0)
+            {
+                chosenFavMeme = FavouritesMemes.First().Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+}
+

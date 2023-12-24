@@ -3,49 +3,69 @@
 <PageTitle>Treasure</PageTitle>
 
 <MudPaper Class="mb-3">
-    <MudToolBar Class="d-flex justify-space-between flex-grow-1">
-        <AuthorizeView>
-            <Authorized>
-                <MudIconButton Variant="Variant.Filled" Class="me-3" Icon="@Icons.Material.Outlined.Add" Color="Color.Primary" Href="/PostAdd" />
-            </Authorized>
-        </AuthorizeView>
-        <MudTextField @bind-Value="SearchText" @bind-Value:after="InitMediaFiles" Label="Search by name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
-        <MudMenu Variant="Variant.Filled" Class="ml-3" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" Dense>
-            <MudMenuItem>
-                <MudMenu Variant="Variant.Filled" ActivationEvent="MouseEvent.MouseOver" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" Dense>
-                    <ActivatorContent>
-                        <MudMenuItem>Show on page</MudMenuItem>
-                    </ActivatorContent>
+    <MudToolBar Class="d-flex flex-grow-1">
+        <MudGrid>
+            <MudItem xs="1" Class="align-self-center">
+                <AuthorizeView>
+                    <Authorized>
+                        <MudIconButton Variant="Variant.Filled" Icon="@Icons.Material.Outlined.Add" Color="Color.Primary" Href="/PostAdd" />
+                    </Authorized>
+                </AuthorizeView>
+            </MudItem>
+            <MudItem xs="5" sm="8">
+                <MudTextField @bind-Value="SearchText" @bind-Value:after="InitMediaFiles" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Margin="Margin.Dense" AdornmentColor="Color.Primary" />
+            </MudItem>
+            <MudItem xs="5" sm="2">
+                <MudSelect @bind-Value="@SelectedSort" @bind-Value:after="InitMediaFiles" Margin="Margin.Dense" T="Sort" Dense="true" Label="Sort" Variant="Variant.Outlined">
+                    @*                     <AuthorizeView>
+                    <Authorized>
+                    <MudSelectItem Value="Sort.YourFavourites">Your Favourites</MudSelectItem>
+                    </Authorized>
+                    </AuthorizeView> *@
+                    <MudSelectItem Value="Sort.DateUploadingDown">Oldest</MudSelectItem>
+                    <MudSelectItem Value="Sort.DateUploadingUp">Newest</MudSelectItem>
+                    <MudSelectItem Value="Sort.Rating">Most rated</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="1" Class="align-self-center">
+                <MudMenu Variant="Variant.Filled" Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" Dense>
+                    <MudMenuItem>
+                        <MudMenu Variant="Variant.Filled" ActivationEvent="MouseEvent.MouseOver" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" Dense>
+                            <ActivatorContent>
+                                <MudMenuItem>Show on page</MudMenuItem>
+                            </ActivatorContent>
 
-                    <ChildContent>
-                        @if (ItemsPerPage == 8)
-                        {
-                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">8</MudMenuItem>
-                        }
-                        else
-                        {
-                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(8)">8</MudMenuItem>
-                        }
-                        @if (ItemsPerPage == 16)
-                        {
-                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">16</MudMenuItem>
-                        }
-                        else
-                        {
-                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(16)">16</MudMenuItem>
-                        }
-                        @if (ItemsPerPage == 30)
-                        {
-                            <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">30</MudMenuItem>
-                        }
-                        else
-                        {
-                            <MudMenuItem OnClick="()=>ChangedItemsPerPage(30)">30</MudMenuItem>
-                        }
-                    </ChildContent>
+                            <ChildContent>
+                                @if (ItemsPerPage == 8)
+                                {
+                                    <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">8</MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="()=>ChangedItemsPerPage(8)">8</MudMenuItem>
+                                }
+                                @if (ItemsPerPage == 16)
+                                {
+                                    <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">16</MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="()=>ChangedItemsPerPage(16)">16</MudMenuItem>
+                                }
+                                @if (ItemsPerPage == 30)
+                                {
+                                    <MudMenuItem IconColor="Color.Primary" Icon="@Icons.Material.Filled.Check">30</MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem OnClick="()=>ChangedItemsPerPage(30)">30</MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
+                    </MudMenuItem>
                 </MudMenu>
-            </MudMenuItem>
-        </MudMenu>
+            </MudItem>
+        </MudGrid>
     </MudToolBar>
 </MudPaper>
 
@@ -132,19 +152,23 @@
                             </MudCardContent>
                         </MudLink>
                         <MudCardActions Class="d-flex justify-space-between">
-                        <div>
-                            <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
-                                <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
-                                @item.Like
-                            </MudButton>
-                            <MudButton @onclick="()=>PutReact(React.Dislike, item.Id)" Variant="Variant.Text" aria-label="cringe">
-                                <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
-                                @item.Dislike
-                            </MudButton>
+                            <div>
+                            <MudTooltip Text="Funny" Placement="Placement.Top">
+                                <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
+                                    <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
+                                    @item.Like
+                                </MudButton>
+                            </MudTooltip>
+                            <MudTooltip Text="UnFunny" Placement="Placement.Top">
+                                <MudButton @onclick="()=>PutReact(React.Dislike, item.Id)" Variant="Variant.Text" aria-label="cringe">
+                                    <MudImage Class="me-1" Src="/staticimgs/CatCringe1x.webp"></MudImage>
+                                    @item.Dislike
+                                </MudButton>
+                            </MudTooltip>
                         </div>
-@*                         <MudToggleIconButton Variant="Variant.Text" Color="Color.Primary" ToggledColor="Color.Primary"
-                                             Icon="@Icons.Material.Filled.Favorite" Title="Off" aria-label="favourite"
-                                             ToggledIcon="@Icons.Material.Filled.FavoriteBorder" ToggledTitle="On" /> *@
+                        @*                         <MudToggleIconButton Variant="Variant.Text" Color="Color.Primary" ToggledColor="Color.Primary"
+                Icon="@Icons.Material.Filled.Favorite" Title="Off" aria-label="favourite"
+                ToggledIcon="@Icons.Material.Filled.FavoriteBorder" ToggledTitle="On" /> *@
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -169,6 +193,10 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "categories")]
     public string? categoriesStr { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "sort")]
+    public int? sorting { get; set; }
 
     [CascadingParameter]
     private Task<AuthenticationState> authenticationState { get; set; }
@@ -210,6 +238,8 @@
 
     private int CountPages { get; set; } = 1;
 
+    private Sort SelectedSort { get; set; }
+
     private bool isLoadingMedia { get; set; } = false;
 
     private bool isLoadingCategory { get; set; } = false;
@@ -227,8 +257,10 @@
         try
         {
             var res = await LocalStorage.GetAsync<int>("HowManyItemsShowOnPage");
+            //var res1 = await LocalStorage.GetAsync<int>("SortType");
 
             ItemsPerPage = res.Success ? res.Value : 8;
+            //SelectedSort = res1.Success ? (Sort)res1.Value : Sort.DateUploadingDown;
 
             if (categoriesStr != null)
             {
@@ -243,21 +275,8 @@
             }
 
             SelectedPage = Page != null ? (int)Page : 1;
+            SelectedSort = sorting != null ? (Sort)sorting : Sort.DateUploadingUp;
 
-            // if (Page == null)
-            // {
-            //     memes = await mediaFilesService.GetMediaPerPage(0, ItemsPerPage);
-            //     Page = 0;
-            // }
-            // else
-            // {
-            //     memes = await mediaFilesService.GetMediaPerPage((int)Page, ItemsPerPage);
-            //     SelectedPage = (int)Page;
-            // }
-
-            // GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
-
-            // CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
             await InitMediaFiles();
 
             isLoadingCategory = true;
@@ -351,6 +370,12 @@
         isLoadingCategory = false;
     }
 
+    // private async Task ChangedTypeSort(Sort typesort)
+    // {
+    //     await LocalStorage.SetAsync("SortType", (int)typesort);
+    //     await InitMediaFiles();
+    // }
+
     private async Task InitMediaFiles()
     {
         isLoadingMedia = true;
@@ -359,7 +384,7 @@
             if (selectedCategories != null && selectedCategories.Length != 0)
             {
                 var selectedCategr = selectedCategories.Select(ct => (Guid)ct.Value);
-                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategr);
+                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategr, SelectedSort);
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesIncludeCategories(selectedCategr);
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
@@ -369,13 +394,14 @@
                             {
                                 ["categories"] = ctgStr,
                                 ["search"] = null,
-                                ["page"] = SelectedPage
+                                ["page"] = SelectedPage,
+                                ["sort"] = (int)SelectedSort
                             });
                 navigation.NavigateTo(uri);
             }
             else if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage);
+                memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage, SelectedSort);
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesBySearch(SearchText);
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
                 string uri = navigation.GetUriWithQueryParameters(
@@ -383,13 +409,14 @@
                             {
                                 ["categories"] = null,
                                 ["search"] = SearchText,
-                                ["page"] = SelectedPage
+                                ["page"] = SelectedPage,
+                                ["sort"] = (int)SelectedSort
                             });
                 navigation.NavigateTo(uri);
             }
             else
             {
-                memes = await mediaFilesService.GetMediaPerPage(SelectedPage, ItemsPerPage);
+                memes = await mediaFilesService.GetMediaPerPage(SelectedPage, ItemsPerPage, SelectedSort);
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
@@ -398,11 +425,27 @@
                                             {
                                                 ["categories"] = null,
                                                 ["search"] = null,
-                                                ["page"] = SelectedPage
+                                                ["page"] = SelectedPage,
+                                                ["sort"] = (int)SelectedSort
                                             });
 
                 navigation.NavigateTo(uri);
             }
+            // switch (SelectedSort)
+            // {
+            //     case Sort.Rating:
+            //         memes = memes.OrderByDescending(a => a.Like);
+            //         break;
+            //     case Sort.DateUploadingUp:
+            //         memes = memes.OrderByDescending(a => a.DateUpload);
+            //         break;
+            //     case Sort.DateUploadingDown:
+            //         memes = memes.OrderBy(a => a.DateUpload);
+            //         break;
+            //     default:
+            //         Snackbar.Add("Unknown type sort");
+            //         break;
+            // }
         }
         catch (Exception ex)
         {
