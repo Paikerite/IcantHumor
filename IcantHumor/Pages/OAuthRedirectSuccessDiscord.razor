@@ -1,0 +1,44 @@
+﻿@page "/OAuthRedirectSuccessDiscord"
+@using Microsoft.AspNetCore.WebUtilities
+<PageTitle>Success Registration</PageTitle>
+<div class="d-flex flex-grow-1 flex-column align-center">
+    <h2 role="alert">You have successfully logged into you account.</h2>
+@*     @if (infouser != null)
+    {
+        <h3>@infouser.name</h3>
+        <h3>@infouser.locale</h3>
+        <h3>@infouser.picture</h3>
+        <h3>@infouser.given_name</h3>
+        <h3>@infouser.email</h3>
+        <h3>@infouser.verified_email</h3>
+    } *@
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; }
+
+    [Inject]
+    private IDiscordAPIService discordAPIService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("code", out var authorizationCode))
+        {
+            try
+            {
+                var tokenResponse = await discordAPIService.GetTokenAsync(authorizationCode);
+                var user = await discordAPIService.GetUserInfoAsync(tokenResponse.access_token);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}

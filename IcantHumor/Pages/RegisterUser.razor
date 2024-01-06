@@ -1,10 +1,29 @@
 ﻿@page "/RegisterUser"
 @using System.Security.Claims;
+@using Microsoft.AspNetCore.Authentication
 
 <EditForm Context="RegisterUser" Model="@model" OnValidSubmit="@OnValidRegister">
     <DataAnnotationsValidator />
     <MudGrid Justify="Justify.Center">
-        <MudItem xs="12" sm="5">
+        <MudItem xs="12" md="4" sm="3">
+            <MudPaper Class="mt-3">
+                <MudGrid Justify="Justify.Center">
+                    <MudItem Class="d-flex align-center justify-center" xs="12">
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Align="Align.Start">Sign up using OAuth</MudText>
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center" xs="12">
+                        <MudDivider DividerType="DividerType.FullWidth" Class="mx-0" />
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center mx-3" xs="12">
+                        <MudButton OnClick="SignInWithGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" FullWidth="true" IconSize="Size.Large" Size="Size.Large" Color="Color.Secondary">through Google</MudButton>
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center mx-3" xs="12">
+                        <MudButton OnClick="SingInWithDiscord" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Discord" FullWidth="true" IconSize="Size.Large" Size="Size.Large" Color="Color.Secondary">through Discord</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6" sm="9">
             <MudCard>
                 <MudCardContent>
                     <MudGrid>
@@ -59,8 +78,9 @@
                     }
                     else
                     {
-                        <MudLink  Href="/SignUser">Already have an account?</MudLink>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+
+                        <MudLink Href="/SignUser">Already have an account?</MudLink>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" Class="ml-auto">Register</MudButton>
                     }
                 </MudCardActions>
             </MudCard>
@@ -133,6 +153,28 @@
         StateHasChanged();
     }
 
+    public void SignInWithGoogle()
+    {
+        var redirectUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+            "client_id=112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com&" +
+            "response_type=code&" +
+            "scope=openid%20email%20profile&" +
+            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessGoogle/"}&" +
+            "state=MetalGearRAY&" +
+            "nonce=MetalGearREX";
+        navigationManager.NavigateTo(redirectUrl, true);
+    }
+
+    public void SingInWithDiscord()
+    {
+        var redirectUrl = "https://discord.com/api/oauth2/authorize?" +
+            "client_id=1193139967241768960&"+
+            "response_type=code&"+
+            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessDiscord"}&"+
+            "scope=identify+email";
+        navigationManager.NavigateTo(redirectUrl, true);
+    }
+
     private async Task<string> CaptureFile()
     {
         if (model.File == null)
@@ -177,22 +219,22 @@
         var model = (RegisterModel)context.Model;
         if (model.File != null)
         {
-            urlToFile = await CaptureFile();  
+            urlToFile = await CaptureFile();
         }
 
         UserViewModel userViewModel = new()
-        {
-            Role = Models.Enums.Roles.User,
-            UserName = model.UserName,
-            ProfilePicture = urlToFile,
-            FullUserInfo = new()
             {
-                UserEmail = model.UserEmail,
-                ConfirmEmail = false,
-                RegisteredAt = DateTime.Now,
-                Password = model.Password,
-            }
-        };
+                Role = Models.Enums.Roles.User,
+                UserName = model.UserName,
+                ProfilePicture = urlToFile,
+                FullUserInfo = new()
+                {
+                    UserEmail = model.UserEmail,
+                    ConfirmEmail = false,
+                    RegisteredAt = DateTime.Now,
+                    Password = model.Password,
+                }
+            };
 
         try
         {
@@ -209,11 +251,11 @@
             var result = await usersService.PostUser(userViewModel);
 
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
-            {
-                Id = result.Id,
-                Role = result.Role,
-                UserName = result.UserName,
-            }, model.Remember);
+                {
+                    Id = result.Id,
+                    Role = result.Role,
+                    UserName = result.UserName,
+                }, model.Remember);
             await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
             await authenticationStateProvider.GetAuthenticationStateAsync();
             navigationManager.NavigateTo("/", true);

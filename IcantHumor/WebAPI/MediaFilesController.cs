@@ -29,7 +29,6 @@ namespace IcantHumor.WebAPI
                 .Include(c => c.Categories)
                 .Include(r => r.WhoReacted)
                 .ToListAsync());
-            //return Ok(await _context.MediaFiles.ToListAsync());
         }
 
         // GET: api/MediaFiles/GetCountMediaFiles
