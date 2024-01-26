@@ -2,16 +2,22 @@
 @using Microsoft.AspNetCore.WebUtilities
 <PageTitle>Success Registration</PageTitle>
 <div class="d-flex flex-grow-1 flex-column align-center">
-    <h2 role="alert">You have successfully logged into you account.</h2>
-@*     @if (infouser != null)
+    @if (infouser != null)
     {
-        <h3>@infouser.name</h3>
-        <h3>@infouser.locale</h3>
-        <h3>@infouser.picture</h3>
-        <h3>@infouser.given_name</h3>
-        <h3>@infouser.email</h3>
-        <h3>@infouser.verified_email</h3>
-    } *@
+        if (IsSuccess)
+        {
+            <h2 role="alert">You have successfully logged into you account. Back to work...</h2>
+        }
+        else
+        {
+            <h2 role="alert">Something gone wrong, see below..</h2>
+        }
+    }
+    else
+    {
+        <h2 role="alert">Waiting response from Discord</h2>
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    }
 </div>
 
 @code {
@@ -24,6 +30,19 @@
     [Inject]
     private IDiscordAPIService discordAPIService { get; set; }
 
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private ProtectedLocalStorage LocalStorage { get; set; }
+
+    public UserInfoDiscordAPI infouser { get; set; }
+
+    public bool IsSuccess { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
@@ -33,12 +52,100 @@
             try
             {
                 var tokenResponse = await discordAPIService.GetTokenAsync(authorizationCode);
-                var user = await discordAPIService.GetUserInfoAsync(tokenResponse.access_token);
+                infouser = await discordAPIService.GetUserInfoAsync(tokenResponse.access_token);
+                if (!infouser.verified)
+                {
+                    throw new Exception("Your discord account isn't verified. Confirm your discord account, then try again..");
+                }
+
+                if (await usersService.IsExistEmailUserInDB(infouser.email))
+                {
+                    await SingIn(infouser);
+                }
+                else
+                {
+                    await Register(infouser);
+                }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
             }
+        }
+    }
+
+    private async Task SingIn(UserInfoDiscordAPI user)
+    {
+        var result = await usersService.GetUserByEmail(user.email);
+        if (result != null)
+        {
+            var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                {
+                    Id = result.Id,
+                    Role = result.Role,
+                    UserName = result.UserName,
+                });
+
+            await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+            await authenticationStateProvider.GetAuthenticationStateAsync();
+            IsSuccess = true;
+            navigationManager.NavigateTo("/", true);
+        }
+    }
+
+    private async Task Register(UserInfoDiscordAPI user)
+    {
+        try
+        {
+            UserViewModel userViewModel = new()
+                {
+                    Role = Models.Enums.Roles.User,
+                    UserName = user.username,
+                    ProfilePicture = GetAvatarUrl(user),
+                    FullUserInfo = new()
+                    {
+                        UserEmail = user.email,
+                        ConfirmEmail = user.verified,
+                        RegisteredAt = DateTime.Now,
+                        Password = null,
+                    }
+                };
+
+            var result = await usersService.PostUser(userViewModel);
+            if (result != null)
+            {
+                var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                    {
+                        Id = result.Id,
+                        Role = result.Role,
+                        UserName = result.UserName,
+                    });
+
+                await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+                await authenticationStateProvider.GetAuthenticationStateAsync();
+                IsSuccess = true;
+                navigationManager.NavigateTo("/", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public string GetAvatarUrl(UserInfoDiscordAPI user)
+    {
+        if (string.IsNullOrEmpty(user.avatar))
+        {
+            return $"https://cdn.discordapp.com/embed/avatars/{int.Parse(user.discriminator) % 5}.png";
+        }
+        else if (user.avatar.StartsWith("a_"))
+        {
+            return null;
+        }
+        else
+        {
+            return $"https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png";
         }
     }
 }

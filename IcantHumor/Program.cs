@@ -1,14 +1,17 @@
-﻿using Google.Apis.Auth.AspNetCore3;
-using IcantHumor.Data;
+﻿using IcantHumor.Data;
+using IcantHumor.Models;
 using IcantHumor.Services;
 using IcantHumor.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MudBlazor;
 using MudBlazor.Services;
+using System.Configuration;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +31,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
+builder.Services.AddOptions();
+builder.Services.Configure<OAuthDiscordConfig>(builder.Configuration.GetSection("DiscordOAuth"));
+builder.Services.Configure<OAuthGoogleConfig>(builder.Configuration.GetSection("GoogleOAuth"));
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices(config =>
@@ -37,57 +44,24 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.BackgroundBlurred = true;
     config.SnackbarConfiguration.SnackbarVariant = Variant.Outlined;
 });
-builder.Services.AddAuthentication(options =>
-{
-    // This forces challenge results to be handled by Google OpenID Handler, so there's no
-    // need to add an AccountController that emits challenges for Login.
-    options.DefaultChallengeScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
-    // This forces forbid results to be handled by Google OpenID Handler, which checks if
-    // extra scopes are required and does automatic incremental auth.
-    options.DefaultForbidScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
-    // Default scheme that will handle everything else.
-    // Once a user is authenticated, the OAuth2 token info is stored in cookies.
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-}).AddCookie()
-.AddGoogleOpenIdConnect(options =>
-{
-    options.ClientId = "112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com";
-    options.ClientSecret = "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";
-});
-//builder.Services.AddAuthentication(config =>
+//builder.Services.AddAuthentication(options =>
 //{
-//    config.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-//    config.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-//    config.DefaultChallengeScheme = "Google";
+//    // This forces challenge results to be handled by Google OpenID Handler, so there's no
+//    // need to add an AccountController that emits challenges for Login.
+//    options.DefaultChallengeScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
+//    // This forces forbid results to be handled by Google OpenID Handler, which checks if
+//    // extra scopes are required and does automatic incremental auth.
+//    options.DefaultForbidScheme = GoogleOpenIdConnectDefaults.AuthenticationScheme;
+//    // Default scheme that will handle everything else.
+//    // Once a user is authenticated, the OAuth2 token info is stored in cookies.
+//    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 //}).AddCookie()
-//  .AddOAuth("Google", options =>
-//  {
-//      options.ClientId = "112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com";
-//      options.ClientSecret = "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";
-//      options.CallbackPath = new PathString("/signin-google");
-//      options.AuthorizationEndpoint = GoogleDefaults.AuthorizationEndpoint;
-//      options.TokenEndpoint = GoogleDefaults.TokenEndpoint;
-//      options.UserInformationEndpoint = GoogleDefaults.UserInformationEndpoint;
-//      options.ClaimActions.Clear();
-//      options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-//      options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-//      options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-//      options.SaveTokens = true;
-//      options.Events = new OAuthEvents
-//      {
-//          OnCreatingTicket = async context =>
-//          {
-//              var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-//              request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-//              request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
-//              var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
-//              response.EnsureSuccessStatusCode();
-//              var user = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-//              context.RunClaimActions(user.RootElement);
-//          }
-//      };
-//  });
 
+//.AddGoogleOpenIdConnect(options =>
+//{
+//    options.ClientId = "112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com";
+//    options.ClientSecret = "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";
+//});
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSwaggerGen(c =>
@@ -111,6 +85,7 @@ builder.Services.AddScoped<ICategoriesService, CategoriesService>();
 builder.Services.AddScoped<IGoogleAPIService, GoogleAPIService>();
 builder.Services.AddScoped<IDiscordAPIService, DiscordAPIService>();
 builder.Services.AddScoped<IReactedUserService, ReactedUserService>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 var app = builder.Build();
 

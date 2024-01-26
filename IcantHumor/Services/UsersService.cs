@@ -62,13 +62,24 @@ namespace IcantHumor.Services
             return userViewModel;
         }
 
-        public async Task<UserViewModel> GetUserByName(string name)
+        public async Task<UserViewModel> GetUserByName(string name, bool FullInfo = false)
         {
             if (_context.Users == null)
             {
                 return null;
             }
-            var userViewModel = await _context.Users.FirstOrDefaultAsync(u=>u.UserName == name);
+
+            UserViewModel? userViewModel;
+            if (FullInfo)
+            {
+                userViewModel = await _context.Users.Include(u => u.FullUserInfo)
+                                                    .FirstOrDefaultAsync(u=>u.UserName == name);
+            }
+            else
+            {
+                userViewModel = await _context.Users.FirstOrDefaultAsync(u => u.UserName == name);
+            }
+
             if (userViewModel == null)
             {
                 return null;
@@ -156,6 +167,34 @@ namespace IcantHumor.Services
         private bool UsersExists(Guid id)
         {
             return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+
+        public async Task<UserViewModel> GetUserByEmail(string email, bool FullInfo = false)
+        {
+            if (_context.Users == null)
+            {
+                return null;
+            }
+            UserViewModel? userViewModel;
+
+            if (FullInfo)
+            {
+                userViewModel = await _context.Users
+                                      .Include(a=>a.FullUserInfo)
+                                      .FirstOrDefaultAsync(u => u.FullUserInfo.UserEmail == email);
+
+            }
+            else
+            {
+                userViewModel = await _context.Users.FirstOrDefaultAsync(u => u.FullUserInfo.UserEmail == email);
+            }
+
+            if (userViewModel == null)
+            {
+                return null;
+            }
+
+            return userViewModel;
         }
     }
 }

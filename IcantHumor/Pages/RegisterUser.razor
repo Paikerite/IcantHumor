@@ -1,6 +1,9 @@
 ﻿@page "/RegisterUser"
 @using System.Security.Claims;
 @using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using System.Timers
+@implements IDisposable
 
 <EditForm Context="RegisterUser" Model="@model" OnValidSubmit="@OnValidRegister">
     <DataAnnotationsValidator />
@@ -24,66 +27,123 @@
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="6" sm="9">
-            <MudCard>
-                <MudCardContent>
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Registration</b></MudText>
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField Label="Confirm password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png, .jpg, .jpeg" OnFilesChanged="UploadFile">
-                                <ButtonTemplate>
-                                    <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
-                                        Upload image for avatar
-                                    </MudButton>
-                                </ButtonTemplate>
-                                <SelectedTemplate>
-                                    @if (context != null)
-                                    {
-                                        <MudText Class="mt-1" Align="Align.Center">@context.Name</MudText>
-                                        <div class="d-flex flex-grow-1 flex-column align-center">
-                                            <MudAvatar Size="Size.Large" Class="me-3" Color="Color.Primary">
-                                                <MudImage id="AvatarShowcase" Alt="Avatar" Class="rounded-lg" />
-                                            </MudAvatar>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <MudText Class="mt-1" Align="Align.Center">leave if you don't wanna</MudText>
-                                    }
-                                </SelectedTemplate>
-                            </MudFileUpload>
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-                <MudCardActions>
-                    @if (isLoading)
-                    {
-                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
-                    }
-                    else
-                    {
+            @if (!isConfirmation)
+            {
+                <MudCard>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudTimeline TimelinePosition="TimelinePosition.Bottom" TimelineOrientation="TimelineOrientation.Horizontal">
+                                    <MudTimelineItem Size="Size.Medium" Color="Color.Primary">
+                                        <MudText Typo="Typo.h5" Align="Align.Center"><b>Registration</b></MudText>
+                                    </MudTimelineItem>
+                                    <MudTimelineItem>
+                                        <MudText Typo="Typo.h5" Align="Align.Center">Confirm</MudText>
+                                    </MudTimelineItem>
+                                </MudTimeline>
+                            </MudItem>
+                            @*                         <MudItem xs="12">
+                        <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Registration</b></MudText>
+                        </MudItem> *@
+                            <MudItem xs="12">
+                                <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField Label="Confirm password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png, .jpg, .jpeg" OnFilesChanged="UploadFile">
+                                    <ButtonTemplate>
+                                        <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
+                                            Upload image for avatar
+                                        </MudButton>
+                                    </ButtonTemplate>
+                                    <SelectedTemplate>
+                                        @if (context != null)
+                                        {
+                                            <MudText Class="mt-1" Align="Align.Center">@context.Name</MudText>
+                                            <div class="d-flex flex-grow-1 flex-column align-center">
+                                                <MudAvatar Size="Size.Large" Class="me-3" Color="Color.Primary">
+                                                    <MudImage id="AvatarShowcase" Alt="Avatar" Class="rounded-lg" />
+                                                </MudAvatar>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <MudText Class="mt-1" Align="Align.Center">leave if you don't wanna</MudText>
+                                        }
+                                    </SelectedTemplate>
+                                </MudFileUpload>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudPaper Elevation="0" Outlined="true">
+                                    <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions>
+                        @if (isLoading)
+                        {
+                            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                        }
+                        else
+                        {
 
-                        <MudLink Href="/SignUser">Already have an account?</MudLink>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                    }
-                </MudCardActions>
-            </MudCard>
+                            <MudLink Href="/SignUser">Already have an account?</MudLink>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" Class="ml-auto">Next</MudButton>
+                        }
+                    </MudCardActions>
+                </MudCard>
+            }
+            else
+            {
+                <MudCard>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudTimeline TimelinePosition="TimelinePosition.Bottom" TimelineOrientation="TimelineOrientation.Horizontal">
+                                    <MudTimelineItem>
+                                        <MudText Typo="Typo.h5" Align="Align.Center">Registration</MudText>
+                                    </MudTimelineItem>
+                                    <MudTimelineItem Size="Size.Medium" Color="Color.Primary">
+                                        <MudText Typo="Typo.h5" Align="Align.Center"><b>Confirm</b></MudText>
+                                    </MudTimelineItem>
+                                </MudTimeline>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText>A unique code has been sent to your email address. Please check your inbox and enter the code below to complete the confirmation process. (Don't forget check spam)</MudText>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="CodeToConfirm" Label="Code" Variant="Variant.Outlined"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton OnClick="CheckCode" Variant="Variant.Filled" FullWidth="true" Size="Size.Large" Color="Color.Secondary">Check code</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions>
+                        @if (Reloading)
+                        {
+                            <MudStack Row="true">
+                                <MudProgressCircular Color="Color.Primary" Max="@IntervalToResendCode.TotalSeconds" Min="0" Value="@TimerForShowing.TotalSeconds" />
+                                <MudLink Disabled>Resend code</MudLink>
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudLink OnClick="SendCode">Resend code</MudLink>
+                        }
+                        <MudButton Class="ml-auto" OnClick="BackToRegistration" StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            }
         </MudItem>
     </MudGrid>
 </EditForm>
@@ -107,6 +167,12 @@
     [Inject]
     private NavigationManager navigationManager { get; set; }
 
+    [Inject]
+    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; }
+
+    [Inject]
+    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; }
+
     private class RegisterModel
     {
         [Required]
@@ -129,12 +195,49 @@
 
     private RegisterModel model = new();
 
+    private UserViewModel userViewModel { get; set; }
+
+    [Inject]
+    private IEmailSender emailSender { get; set; }
+
     private bool isLoading { get; set; } = false;
+
+    private bool isConfirmation { get; set; } = false;
+
+    public string ConfirmCode { get; set; }
+
+    public string CodeToConfirm { get; set; }
+
+    public TimeSpan IntervalToResendCode { get; } = TimeSpan.FromMilliseconds(120000);
+
+    public Timer MyTimer { get; set; }
+
+    public DateTime StartTimeSend{ get; set; }
+
+    public TimeSpan TimerForShowing { get; set; }
+
+    public bool Reloading { get; set; } = false;
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
-    // private IBrowserFile? ImageFile { get; set; }
-    //private string? imageBase64 { get; set; }
+    protected override void OnInitialized()
+    {
+        MyTimer = new(1000);
+        MyTimer.Elapsed += OnTimeEvent;
+        MyTimer.AutoReset = true;
+        MyTimer.Enabled = true;
+    }
+
+    private void BackToRegistration() 
+    { 
+        isConfirmation = false;
+        // if (model.File != null)
+        // {
+        //     var imageStream = model.File.OpenReadStream(maxFileSize);
+        //     var dotnetImageStream = new DotNetStreamReference(imageStream);
+        //     await JS.InvokeVoidAsync("setImage", "AvatarShowcase", dotnetImageStream);
+        // }
+    }
 
     private async Task UploadFile(InputFileChangeEventArgs e)
     {
@@ -143,6 +246,11 @@
             model.File = e.File;
             var imageStream = model.File.OpenReadStream(maxFileSize);
             var dotnetImageStream = new DotNetStreamReference(imageStream);
+            if (userViewModel != null && userViewModel.ProfilePicture != null)
+            {
+                userViewModel.ProfilePicture = null;
+            }
+
             await JS.InvokeVoidAsync("setImage", "AvatarShowcase", dotnetImageStream);
             Snackbar.Add($"This file {e.File.Name} has upload succesfully");
         }
@@ -156,7 +264,7 @@
     public void SignInWithGoogle()
     {
         var redirectUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
-            "client_id=112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com&" +
+            $"client_id={GoogleApiConfig.Value.ClientId}&" +
             "response_type=code&" +
             "scope=openid%20email%20profile&" +
             $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessGoogle/"}&" +
@@ -168,9 +276,9 @@
     public void SingInWithDiscord()
     {
         var redirectUrl = "https://discord.com/api/oauth2/authorize?" +
-            "client_id=1193139967241768960&"+
-            "response_type=code&"+
-            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessDiscord"}&"+
+            $"client_id={DiscordApiConfig.Value.AppId}&" +
+            "response_type=code&" +
+            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessDiscord"}&" +
             "scope=identify+email";
         navigationManager.NavigateTo(redirectUrl, true);
     }
@@ -185,24 +293,31 @@
         {
             //ImageFiles.Clear();
             // e.GetMultipleFiles(maxAllowedFiles) for several files
-            string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
-                                                      Path.GetExtension(model.File.Name));
-
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "AvatarsImages");
-            if (!Directory.Exists(path))
+            if (userViewModel == null || userViewModel.ProfilePicture == null)
             {
-                Directory.CreateDirectory(path);
+                string newFileName = Path.ChangeExtension(Path.GetRandomFileName(),
+                                                          Path.GetExtension(model.File.Name));
+
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "AvatarsImages");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                string absolutePath = Path.Combine(path, newFileName);
+                string relativePath = Path.Combine("AvatarsImages", newFileName);
+
+                await using FileStream fs = new(absolutePath, FileMode.Create);
+
+                model.File = await model.File.RequestImageFileAsync(model.File.ContentType, 300, 300);
+                await model.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
+
+                return relativePath;
             }
-
-            string absolutePath = Path.Combine(path, newFileName);
-            string relativePath = Path.Combine("AvatarsImages", newFileName);
-
-
-            await using FileStream fs = new(absolutePath, FileMode.Create);
-            model.File = await model.File.RequestImageFileAsync(model.File.ContentType, 300, 300);
-            await model.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
-
-            return relativePath;
+            else
+            {
+                return userViewModel.ProfilePicture;
+            }
         }
         catch (Exception ex)
         {
@@ -222,19 +337,19 @@
             urlToFile = await CaptureFile();
         }
 
-        UserViewModel userViewModel = new()
+        userViewModel = new()
+        {
+            Role = Models.Enums.Roles.User,
+            UserName = model.UserName,
+            ProfilePicture = urlToFile,
+            FullUserInfo = new()
             {
-                Role = Models.Enums.Roles.User,
-                UserName = model.UserName,
-                ProfilePicture = urlToFile,
-                FullUserInfo = new()
-                {
-                    UserEmail = model.UserEmail,
-                    ConfirmEmail = false,
-                    RegisteredAt = DateTime.Now,
-                    Password = model.Password,
-                }
-            };
+                UserEmail = model.UserEmail,
+                ConfirmEmail = false,
+                RegisteredAt = DateTime.Now,
+                Password = model.Password,
+            }
+        };
 
         try
         {
@@ -248,6 +363,58 @@
                 throw new Exception("Your Email is already taken, try another");
             }
 
+            isConfirmation = true;
+            Reloading = true;
+            await SendCode();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+        isLoading = false;
+    }
+
+    private async Task SendCode()
+    {
+        try
+        {
+            StartTimeSend = DateTime.Now;
+            TimerForShowing = new();
+            MyTimer.Start();
+
+            Random rnd = new Random();
+            ConfirmCode = rnd.Next(100000, 999999).ToString();
+            //string htmlMessage = $"<p>Code for confirmation email, copy it and put it in the field:</p><h2><strong>{ConfirmCode}</strong></h2><p><strong>Warning: </strong>code will work only next {IntervalToResendCode.Minutes} minutes</p><blockquote><p>IcantHumor &copy; 2024</p></blockquote>";
+            string htmlMessage = $"<p>Code for confirmation email, copy it and put it in the field:</p><h2><strong>{ConfirmCode}</strong></h2><blockquote><p>IcantHumor &copy; 2024</p></blockquote>";
+            await emailSender.SendEmailAsync(userViewModel.FullUserInfo.UserEmail, userViewModel.UserName, htmlMessage);
+
+            Reloading = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+        }
+    }
+
+
+    private async void OnTimeEvent(Object source, ElapsedEventArgs e)
+    {
+        DateTime currentTimeFromTimer = e.SignalTime;
+        TimerForShowing = currentTimeFromTimer.Subtract(StartTimeSend);
+        if (TimerForShowing >= IntervalToResendCode)
+        {
+            MyTimer.Stop();
+            Reloading = false;
+        }
+        //StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckCode()
+    {
+        if (string.Compare(CodeToConfirm, ConfirmCode, StringComparison.Ordinal) == 0)
+        {
+            userViewModel.FullUserInfo.ConfirmEmail = true;
             var result = await usersService.PostUser(userViewModel);
 
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
@@ -260,10 +427,14 @@
             await authenticationStateProvider.GetAuthenticationStateAsync();
             navigationManager.NavigateTo("/", true);
         }
-        catch (Exception ex)
+        else
         {
-            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
+            Snackbar.Add("Wrong code, try again", Severity.Error);
         }
-        isLoading = false;
+    }
+
+    void IDisposable.Dispose()
+    {
+        MyTimer.Elapsed -= OnTimeEvent;
     }
 }

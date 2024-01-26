@@ -1,8 +1,8 @@
-﻿using Google.Apis.Auth.OAuth2.Responses;
-using IcantHumor.Models;
+﻿using IcantHumor.Models;
 using IcantHumor.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Options;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -13,10 +13,12 @@ namespace IcantHumor.Services
     {
         private readonly HttpClient httpClient;
         private readonly NavigationManager navigationManager;
-        public GoogleAPIService(HttpClient httpClient, NavigationManager navigationManager)
+        private readonly IOptions<OAuthGoogleConfig> oauthOptions;
+        public GoogleAPIService(HttpClient httpClient, NavigationManager navigationManager, IOptions<OAuthGoogleConfig> oauthOptions)
         {
             this.httpClient = httpClient;
             this.navigationManager = navigationManager;
+            this.oauthOptions = oauthOptions;
         }
 
         public async Task<TokenResponseGoogleOAuth> GetTokenAsync(string authorizationCode)
@@ -26,8 +28,8 @@ namespace IcantHumor.Services
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["code"] = authorizationCode,
-                ["client_id"] = "112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com",
-                ["client_secret"] = "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",
+                ["client_id"] = oauthOptions.Value.ClientId,
+                ["client_secret"] = oauthOptions.Value.ClientSecret,
                 ["redirect_uri"] = navigationManager.BaseUri + "OAuthRedirectSuccessGoogle/",
                 ["grant_type"] = "authorization_code"
             });

@@ -4,7 +4,25 @@
 <EditForm EditContext="EditContext" OnValidSubmit="@OnValidLogin">
     <DataAnnotationsValidator />
     <MudGrid Justify="Justify.Center">
-        <MudItem xs="12" sm="5">
+        <MudItem xs="12" md="4" sm="3">
+            <MudPaper Class="mt-3">
+                <MudGrid Justify="Justify.Center">
+                    <MudItem Class="d-flex align-center justify-center" xs="12">
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Align="Align.Start">Sign in using OAuth</MudText>
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center" xs="12">
+                        <MudDivider DividerType="DividerType.FullWidth" Class="mx-0" />
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center mx-3" xs="12">
+                        <MudButton OnClick="SignInWithGoogle" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Google" FullWidth="true" IconSize="Size.Large" Size="Size.Large" Color="Color.Secondary">through Google</MudButton>
+                    </MudItem>
+                    <MudItem Class="d-flex align-center justify-center mx-3" xs="12">
+                        <MudButton OnClick="SingInWithDiscord" Variant="Variant.Filled" StartIcon="@Icons.Custom.Brands.Discord" FullWidth="true" IconSize="Size.Large" Size="Size.Large" Color="Color.Secondary">through Discord</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6" sm="9">
             <MudCard>
                 <MudCardContent>
                     <MudGrid>
@@ -53,6 +71,12 @@
 
     [Inject]
     private NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; }
+
+    [Inject]
+    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; }
 
     private class LoginModel
     {
@@ -151,6 +175,28 @@
         {
             LoginButtonStyle = string.Empty;
         }
+    }
+
+    public void SignInWithGoogle()
+    {
+        var redirectUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+            $"client_id={GoogleApiConfig.Value.ClientId}&" +
+            "response_type=code&" +
+            "scope=openid%20email%20profile&" +
+            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessGoogle/"}&" +
+            "state=MetalGearRAY&" +
+            "nonce=MetalGearREX";
+        navigationManager.NavigateTo(redirectUrl, true);
+    }
+
+    public void SingInWithDiscord()
+    {
+        var redirectUrl = "https://discord.com/api/oauth2/authorize?" +
+            $"client_id={DiscordApiConfig.Value.AppId}&" +
+            "response_type=code&" +
+            $"redirect_uri={navigationManager.BaseUri + "OAuthRedirectSuccessDiscord"}&" +
+            "scope=identify+email";
+        navigationManager.NavigateTo(redirectUrl, true);
     }
 
     void IDisposable.Dispose()

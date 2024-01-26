@@ -1,6 +1,7 @@
 ﻿using IcantHumor.Models;
 using IcantHumor.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -10,11 +11,13 @@ namespace IcantHumor.Services
     {
         private readonly HttpClient httpClient;
         private readonly NavigationManager navigationManager;
+        private readonly IOptions<OAuthDiscordConfig> oauthConfig;
 
-        public DiscordAPIService(HttpClient httpClient, NavigationManager navigationManager)
+        public DiscordAPIService(HttpClient httpClient, NavigationManager navigationManager, IOptions<OAuthDiscordConfig> oauthConfig)
         {
             this.httpClient = httpClient;
             this.navigationManager = navigationManager;
+            this.oauthConfig = oauthConfig;
         }
 
         public async Task<TokenResponseDiscordOAuth> GetTokenAsync(string authorizationCode)
@@ -24,8 +27,8 @@ namespace IcantHumor.Services
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["code"] = authorizationCode,
-                ["client_id"] = "1193139967241768960",
-                ["client_secret"] = "q5KiXFl0FRiVxSjoTVEiwNFhA9JGjLBY",
+                ["client_id"] = oauthConfig.Value.AppId,
+                ["client_secret"] = oauthConfig.Value.AppSecret,
                 ["redirect_uri"] = navigationManager.BaseUri + "OAuthRedirectSuccessDiscord",
                 ["grant_type"] = "authorization_code"
             });

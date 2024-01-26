@@ -3,15 +3,21 @@
 
 <PageTitle>Success Registration</PageTitle>
 <div class="d-flex flex-grow-1 flex-column align-center">
-    <h2 role="alert">You have successfully logged into you account.</h2>
     @if (infouser != null)
+    {   
+        if (IsSuccess)
+        {
+            <h2 role="alert">You have successfully logged into you account. Back to work...</h2>
+        }
+        else
+        {
+            <h2 role="alert">Something gone wrong, see below..</h2>
+        }
+    }
+    else
     {
-        <h3>@infouser.name</h3>
-        <h3>@infouser.locale</h3>
-        <h3>@infouser.picture</h3>
-        <h3>@infouser.given_name</h3>
-        <h3>@infouser.email</h3>
-        <h3>@infouser.verified_email</h3>
+        <h2 role="alert">Waiting response from Google</h2>
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large"/>
     }
 </div>
 
@@ -25,7 +31,18 @@
     [Inject]
     private ISnackbar Snackbar { get; set; }
 
+    [Inject]
+    private IUsersService usersService { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+
+    [Inject]
+    private ProtectedLocalStorage LocalStorage { get; set; }
+
     public UserInfoGoogleAPI infouser { get; set; }
+
+    public bool IsSuccess { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -37,22 +54,84 @@
             {
                 var tokkenAccess = await googleAPIService.GetTokenAsync(authorizationCode);
                 infouser = await googleAPIService.GetUserInfoAsync(tokkenAccess.access_token);
+                if (!infouser.verified_email)
+                {
+                    throw new Exception("Your google email isn't verified. Confirm your email in your google account, then try again..");
+                }
+
+                if (await usersService.IsExistEmailUserInDB(infouser.email))
+                {
+                    await SingIn(infouser);
+                }
+                else
+                {
+                    await Register(infouser);
+                }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
             }
             // Сохраните токен и используйте его для доступа к защищенным ресурсам.
+        }
+    }
 
-            // var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
-            //     {
-            //         Id = result.Id,
-            //         Role = result.Role,
-            //         UserName = result.UserName,
-            //     }, model.Remember);
-            // await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
-            // await authenticationStateProvider.GetAuthenticationStateAsync();
-            // navigationManager.NavigateTo("/", true);
+    private async Task SingIn(UserInfoGoogleAPI user)
+    {
+        var result = await usersService.GetUserByEmail(user.email);
+        if (result != null)
+        {
+            var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                {
+                    Id = result.Id,
+                    Role = result.Role,
+                    UserName = result.UserName,
+                });
+
+            await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+            await authenticationStateProvider.GetAuthenticationStateAsync();
+            IsSuccess = true;
+            navigationManager.NavigateTo("/", true);
+        }
+    }
+
+    private async Task Register(UserInfoGoogleAPI user)
+    {
+        try
+        {
+            UserViewModel userViewModel = new()
+            {
+                Role = Models.Enums.Roles.User,
+                UserName = user.name,
+                ProfilePicture = user.picture,
+                FullUserInfo = new()
+                {
+                    UserEmail = user.email,
+                    ConfirmEmail = user.verified_email,
+                    RegisteredAt = DateTime.Now,
+                    Password = null,
+                }
+            };
+
+            var result = await usersService.PostUser(userViewModel);
+            if (result != null)
+            {
+                var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                    {
+                        Id = result.Id,
+                        Role = result.Role,
+                        UserName = result.UserName,
+                    });
+
+                await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+                await authenticationStateProvider.GetAuthenticationStateAsync();
+                IsSuccess = true;
+                navigationManager.NavigateTo("/", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
     }
 }
