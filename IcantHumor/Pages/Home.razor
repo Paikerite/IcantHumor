@@ -17,11 +17,6 @@
             </MudItem>
             <MudItem xs="5" sm="2">
                 <MudSelect @bind-Value="@SelectedSort" @bind-Value:after="InitMediaFiles" Margin="Margin.Dense" T="Sort" Dense="true" Label="Sort" Variant="Variant.Outlined">
-                    @*                     <AuthorizeView>
-                    <Authorized>
-                    <MudSelectItem Value="Sort.YourFavourites">Your Favourites</MudSelectItem>
-                    </Authorized>
-                    </AuthorizeView> *@
                     <MudSelectItem Value="Sort.DateUploadingDown">Oldest</MudSelectItem>
                     <MudSelectItem Value="Sort.DateUploadingUp">Newest</MudSelectItem>
                     <MudSelectItem Value="Sort.Rating">Most rated</MudSelectItem>

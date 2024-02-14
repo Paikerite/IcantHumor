@@ -47,9 +47,9 @@
                                 }
                             </MudChipSet>
                             <MudStack AlignItems="AlignItems.Center" Row="true">
-                                <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="CategoryByUser" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
+                                <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="model.CategoryByUser" For="@(() => model.CategoryByUser)" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
                                                  ShowProgressIndicator="true" CoerceText="false" ResetValueOnEmptyText="false" CoerceValue="true" MaxLength="25"
-                                                 Required="true" ProgressIndicatorColor="Color.Primary" AnchorOrigin="Origin.BottomCenter" />
+                                                 Required="true" ProgressIndicatorColor="Color.Primary" AnchorOrigin="Origin.BottomCenter"/>
                                 <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
                             </MudStack>
                         </MudItem>
@@ -94,6 +94,8 @@
 
     private IEnumerable<CategoryViewModel> categories { get; set; }
 
+    private UserViewModel User { get; set; }
+
     private class PostAddModel
     {
         [Required]
@@ -101,6 +103,11 @@
         [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
         public string Title { get; set; }
         public IBrowserFile File { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
+        public string CategoryByUser { get; set; }
         //public IEnumerable<string> Categories { get; set; }
     }
 
@@ -118,7 +125,12 @@
 
     private bool isLoading { get; set; } = false;
 
-    private string CategoryByUser { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationState;
+        var userName = authState.User.Identity.Name;
+        User = await usersService.GetUserByName(userName);
+    }
 
     public async Task<IEnumerable<string>> SearchFunc(string search)
     {
@@ -134,22 +146,29 @@
 
     private async Task AddCategoryChip()
     {
-        if (!valuesOfChips.Any(v => v.Name == CategoryByUser))
+        if (model.CategoryByUser != null)
         {
-            //valuesOfChips.Add(new() { Name = CategoryByUser.ToLower() });
-            var result = await categoriesService.GetCategoryByName(CategoryByUser);
-            if (result != null)
+            if (!valuesOfChips.Any(v => v.Name == model.CategoryByUser))
             {
-                valuesOfChips.Add(result);
+                //valuesOfChips.Add(new() { Name = CategoryByUser.ToLower() });
+                var result = await categoriesService.GetCategoryByName(model.CategoryByUser);
+                if (result != null)
+                {
+                    valuesOfChips.Add(result);
+                }
+                else
+                {
+                    valuesOfChips.Add(new() { Name = model.CategoryByUser.ToLower() });
+                }
             }
             else
             {
-                valuesOfChips.Add(new() { Name = CategoryByUser.ToLower() });
+                Snackbar.Add("Category has already chosen", Severity.Warning);
             }
         }
         else
         {
-            Snackbar.Add("Category has already chosen", Severity.Warning);
+            Snackbar.Add("Add at least one tag", Severity.Warning);
         }
     }
 
@@ -178,6 +197,7 @@
             mediaViewModel.UrlToFile = urlToFile;
             mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
             mediaViewModel.DateUpload = DateTime.Now;
+            mediaViewModel.IdOfCreator = User.Id;
 
             categories = await categoriesService.GetCategories();
             List<Guid> categoriesIdToAdd = new();

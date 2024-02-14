@@ -31,7 +31,6 @@
                                 </MudButton>
                             </MudBadge>
                     }
-
                 }
                 else
                 {
@@ -43,7 +42,7 @@
                     <MudToolBar Class="d-flex justify-space-between">
                         <AuthorizeView>
                             <Authorized>
-                                @if (userOfUploader != null && userOfUploader.UserName == authState.User.Identity.Name)
+                                @if (userOfUploader != null && userOfUploader.UserName == authState.User.Identity.Name || authState.User.IsInRole(Roles.Moderator.ToString()) || authState.User.IsInRole(Roles.BigBoss.ToString()))
                                 {
                                     <MudTooltip Text="Delete" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
@@ -70,6 +69,17 @@
                                 </MudButton>
                             </MudTooltip>
                         </div>
+                        <MudButton Variant="Variant.Filled" OnClick="CopyLinkToClipBoard" Color="Color.Primary">
+                            @if (isCopied)
+                            {
+                                <MudIcon Class="ms-n1" Size="Size.Small" Icon="@Icons.Material.Filled.Check"/>
+                                <MudText Class="ms-2">Copied</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Copy link to image</MudText>
+                            }
+                        </MudButton>
                         <MudButton Variant="Variant.Filled" @onclick="DownloadFileFromStream" StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary">Download</MudButton>
                     </MudToolBar>
                 </MudPaper>
@@ -104,19 +114,19 @@
                     <MudStack Row="true" AlignItems="AlignItems.Center">
                         @if (userOfUploader != null)
                         {
-                            <MudAvatar Color="Color.Primary">
-                                @if (userOfUploader.ProfilePicture != null)
-                                {
-                                    <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
-                                }
-                                else
-                                {
-                                    @userOfUploader.UserName[0]
-                                }
-                            </MudAvatar>
-                            <MudText>
+                            <MudLink Href="@($"/InfoUser/{media.IdOfCreator}")" Class="d-flex align-center" Underline="Underline.None" Color="Color.Default">
+                                <MudAvatar Color="Color.Primary" Class="mr-2">
+                                    @if (userOfUploader.ProfilePicture != null)
+                                    {
+                                        <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
+                                    }
+                                    else
+                                    {
+                                        @userOfUploader.UserName[0]
+                                    }
+                                </MudAvatar>
                                 @userOfUploader.UserName
-                            </MudText>
+                            </MudLink>
                             <MudText Class="d-flex justify-end flex-grow-1">
                                 Uploaded by @media.DateUpload.ToString("d")
                             </MudText>
@@ -187,6 +197,8 @@
 
     private bool isFavourite { get; set; }
 
+    private bool isCopied { get; set; }
+
     private string UpdatedTitle { get; set; }
 
     private void EditTitleStatus() => isEditingTitle = !isEditingTitle;
@@ -204,8 +216,7 @@
 
                 if (userName != null)
                 {
-                    var usersFavorites = await usersService.GetUserByName(userName);
-                    usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
+                    var usersFavorites = await usersService.GetUserByName(userName, true);
                     isFavourite = usersFavorites.Favourites.Any(a => a.IdPost == PostID);
                 }
 
@@ -327,6 +338,12 @@
             }
         }
 
+    }
+
+    private async Task CopyLinkToClipBoard()
+    {
+        isCopied = true;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", navigationManager.BaseUri + media.UrlToFile);
     }
 
     private async Task DeletePost()

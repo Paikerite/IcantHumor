@@ -62,6 +62,38 @@ namespace IcantHumor.Services
             return userViewModel;
         }
 
+        public async Task<UserViewModel> ForbidUserAccess(Guid guid)
+        {
+            if (_context.Users == null)
+            {
+                return null;
+            }
+
+            var user = await _context.Users.FindAsync(guid);
+            if (user != null)
+            {
+                user.Role = Models.Enums.Roles.Forbidden;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UsersExists(guid))
+                {
+                    return null;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return user;
+        }
+
         public async Task<UserViewModel> GetUserByName(string name, bool FullInfo = false)
         {
             if (_context.Users == null)
@@ -73,6 +105,7 @@ namespace IcantHumor.Services
             if (FullInfo)
             {
                 userViewModel = await _context.Users.Include(u => u.FullUserInfo)
+                                                    .Include(u=>u.Favourites)
                                                     .FirstOrDefaultAsync(u=>u.UserName == name);
             }
             else
@@ -181,6 +214,7 @@ namespace IcantHumor.Services
             {
                 userViewModel = await _context.Users
                                       .Include(a=>a.FullUserInfo)
+                                      .Include(u => u.Favourites)
                                       .FirstOrDefaultAsync(u => u.FullUserInfo.UserEmail == email);
 
             }

@@ -4,6 +4,7 @@
     {
         User,
         Moderator,
-        SUPERADMIN
+        BigBoss,
+        Forbidden
     }
 }

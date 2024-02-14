@@ -29,6 +29,24 @@ namespace IcantHumor.Services
             return default(MediaViewModel);
         }
 
+        public async Task<IEnumerable<MediaViewModel>> DeleteAllMediaByCreatedUserId(Guid guid)
+        {
+            var products = await this.httpClient.DeleteAsync($"api/MediaFiles/DeleteAllMediaByCreatedUserId/{guid}");
+            if (products.IsSuccessStatusCode)
+            {
+                return await products.Content.ReadFromJsonAsync<IEnumerable<MediaViewModel>>();
+            }
+            else if (products.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Enumerable.Empty<MediaViewModel>();
+            }
+            else
+            {
+                var message = await products.Content.ReadAsStringAsync();
+                throw new Exception($"http status:{products.StatusCode}, message:{message}");
+            }
+        }
+
         public async Task<IEnumerable<MediaViewModel>> GetMediaFiles()
         {
             var products = await this.httpClient.GetAsync("api/MediaFiles");

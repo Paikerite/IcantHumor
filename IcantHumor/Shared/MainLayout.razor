@@ -62,7 +62,18 @@
     </MudAppBar>
     <MudMainContent Class="mt-3">
         <MudContainer Fixed="true" MaxWidth="MaxWidth.ExtraLarge">
-            @Body
+            @if (userViewModel != null && userViewModel.Role == Roles.Forbidden)
+            {
+                <div class="d-flex flex-grow-1 flex-column align-center">
+                    <MudText Typo="Typo.h4" Color="Color.Error">You've got banned!</MudText>
+                    <MudImage Src="staticimgs/WhatTheFuckMan4x.webp"></MudImage>
+                    <MudText>What did you expect?</MudText>
+                </div>
+            }
+            else
+            {
+                @Body
+            }
         </MudContainer>
     </MudMainContent>
     <MudMainContent Class="flex-grow-0">

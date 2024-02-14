@@ -40,76 +40,83 @@ else
                     {
                         <div>
                             <MudText Typo="Typo.h5" Color="Color.Secondary" Align="Align.Center">@user.UserName</MudText>
-                                <MudText Align="Align.Center">Joker</MudText>
+                                <MudText Align="Align.Center"><strong>Joker</strong></MudText>
                             </div>
                         <div>
-                            <MudText Typo="Typo.h5" Align="Align.Center">@user.Id</MudText>
-                                <MudText Align="Align.Center">GUID Number</MudText>
+                            <MudText Typo="Typo.body1" Align="Align.Center">@user.Id</MudText>
+                                <MudText Align="Align.Center"><strong>ID User</strong></MudText>
                             </div>
                         <div>
                             <MudText Typo="Typo.h5" Align="Align.Center">@user.FullUserInfo.RegisteredAt.ToString("d")</MudText>
-                                <MudText Align="Align.Center">Join Date</MudText>
+                                <MudText Align="Align.Center"><strong>Join Date</strong></MudText>
                             </div>
                         <div>
                             <MudText Typo="Typo.h5" Align="Align.Center">@user.Role</MudText>
-                                <MudText Align="Align.Center">Rank</MudText>
-                            </div>
+                                <MudText Align="Align.Center"><strong>Rank</strong></MudText>
+                        </div>
+                        @if (authState.User.IsInRole(Roles.Moderator.ToString()) || authState.User.IsInRole(Roles.BigBoss.ToString()))
+                        {
+                            <MudButton OnClick="BanUser" Variant="Variant.Filled" FullWidth="true" Color="Color.Error">BAN</MudButton>
+                        }
                     }
                 </MudStack>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" sm="9" md="4">
-            <MudPaper Class="pa-3">
-                <EditForm Context="EditUser" Model="@model" OnValidSubmit="@OnValidEdit">
-                    <DataAnnotationsValidator />
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserName)" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudFileUpload T="IBrowserFile" @bind-Files="model.File" For="@(() => model.File)" Accept=".png" OnFilesChanged="UploadFile">
-                                <ButtonTemplate>
-                                    <MudButton HtmlTag="label"
-                                               Variant="Variant.Filled"
-                                               Color="Color.Primary"
-                                               StartIcon="@Icons.Material.Filled.CloudUpload"
-                                               for="@context">
-                                        Upload Avatar
-                                    </MudButton>
-                                </ButtonTemplate>
-                                <SelectedTemplate>
-                                    @if (context != null && context.Size <= maxFileSize)
-                                    {
-                                        <MudText>@context.Name</MudText>
-                                    }
-                                </SelectedTemplate>
-                            </MudFileUpload>
-                        </MudItem>
-                        @if (isLoading)
-                        {
+        @if (user != null && user.UserName == authState.User.Identity.Name)
+        {
+            <MudItem xs="12" sm="9" md="4">
+                <MudPaper Class="pa-3">
+                    <EditForm Context="EditUser" Model="@model" OnValidSubmit="@OnValidEdit">
+                        <DataAnnotationsValidator />
+                        <MudGrid>
                             <MudItem xs="12">
-                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                                <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserName)" />
                             </MudItem>
-                        }
-                        else if (isLoading == false && (string.IsNullOrEmpty(model.UserName) && string.IsNullOrEmpty(model.UserName) && (model.File == null || model.File.Size >= maxFileSize)))
-                        {
                             <MudItem xs="12">
-                                <MudButton Disabled="true" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
+                                <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                             </MudItem>
-                        }
-                        else
-                        {
                             <MudItem xs="12">
-                                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
+                                <MudFileUpload T="IBrowserFile" @bind-Files="model.File" For="@(() => model.File)" Accept=".png" OnFilesChanged="UploadFile">
+                                    <ButtonTemplate>
+                                        <MudButton HtmlTag="label"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                                                   for="@context">
+                                            Upload Avatar
+                                        </MudButton>
+                                    </ButtonTemplate>
+                                    <SelectedTemplate>
+                                        @if (context != null && context.Size <= maxFileSize)
+                                        {
+                                            <MudText>@context.Name</MudText>
+                                        }
+                                    </SelectedTemplate>
+                                </MudFileUpload>
                             </MudItem>
-                        }
-                    </MudGrid>
-                </EditForm>
-            </MudPaper>
-        </MudItem>
+                            @if (isLoading)
+                            {
+                                <MudItem xs="12">
+                                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                                </MudItem>
+                            }
+                            else if (isLoading == false && (string.IsNullOrEmpty(model.UserName) && string.IsNullOrEmpty(model.UserName) && (model.File == null || model.File.Size >= maxFileSize)))
+                            {
+                                <MudItem xs="12">
+                                    <MudButton Disabled="true" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem xs="12">
+                                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Save</MudButton>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </EditForm>
+                </MudPaper>
+            </MudItem>
+        }
         <MudItem xs="12" sm="12" md="6">
             <MudPaper Class="pa-3">
                 <MudText Class="mb-3" Align="Align.Center">Favourites</MudText>
@@ -159,6 +166,9 @@ else
     private IUsersService usersService { get; set; }
 
     [Inject]
+    private IMediaFilesService mediaFilesService { get; set; }
+
+    [Inject]
     private ProtectedLocalStorage LocalStorage { get; set; }
 
     [Inject]
@@ -203,10 +213,10 @@ else
             user = await usersService.GetUser(UserID, true);
             FavouritesRecentlyAdded = await favouritesService.GetCountFavouritesByUser(UserID, 8);
 
-            if (user.UserName != authState.User.Identity.Name)
-            {
-                navigationManager.NavigateTo("/", replace: true);
-            }
+            // if (user.UserName != authState.User.Identity.Name)
+            // {
+            //     navigationManager.NavigateTo("/", replace: true);
+            // }
         }
         catch (Exception ex)
         {
@@ -229,6 +239,13 @@ else
         {
             Snackbar.RemoveByKey(KeyForSnackbar);
         }
+    }
+
+    private async Task BanUser()
+    {
+        var user = await usersService.ForbidUserAccess(UserID);
+        var posts = await mediaFilesService.DeleteAllMediaByCreatedUserId(UserID);
+        navigationManager.NavigateTo("/", true, true);
     }
 
     private void NavigateToSource(Guid guid)

@@ -13,18 +13,18 @@ namespace IcantHumor.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            for (int i = 1; i <= 40; i++)
-            {
-                modelBuilder.Entity<MediaViewModel>().HasData(new MediaViewModel
-                {
-                    Id = Guid.NewGuid(),
-                    IdOfCreator = Guid.Parse("01001B92-A37E-48F5-4CCF-08DBE68EB722"),
-                    Title = $"funny cat {i}",
-                    UrlToFile = "PostResources\\bebis.jpg",
-                    TypeOfFile = Models.Enums.TypeOfFile.Img,
-                    DateUpload = DateTime.Now,
-                });
-            }
+            //for (int i = 1; i <= 40; i++)
+            //{
+            //    modelBuilder.Entity<MediaViewModel>().HasData(new MediaViewModel
+            //    {
+            //        Id = Guid.NewGuid(),
+            //        IdOfCreator = Guid.Parse("01001B92-A37E-48F5-4CCF-08DBE68EB722"),
+            //        Title = $"funny cat {i}",
+            //        UrlToFile = "PostResources\\bebis.jpg",
+            //        TypeOfFile = Models.Enums.TypeOfFile.Img,
+            //        DateUpload = DateTime.Now,
+            //    });
+            //}
         }
 
         public DbSet<CategoryViewModel> Categories { get; set; }

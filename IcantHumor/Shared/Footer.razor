@@ -2,7 +2,15 @@
     <MudStack Class="pb-16">
         <MudDivider DividerType="DividerType.Middle" Class="my-6 mx-0" />
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-            <MudText Typo="Typo.body1">Copyright 2024 and made by Senya</MudText>
+            <MudStack>
+                <MudText Typo="Typo.body1">Copyright 2024 and made by Senya</MudText>
+                <MudButton OnClick="OnExpandCollapseClick" StartIcon="@Icons.Material.Filled.KeyboardDoubleArrowDown" EndIcon="@Icons.Material.Filled.KeyboardDoubleArrowDown">About</MudButton>
+                <MudCollapse Expanded="expanded">
+                    <MudText Typo="Typo.body1">The purpose of my site is store and share xdlolfunny media content. Of course I don't claim these kinda content, they are not created by me.</MudText>
+                    <MudText Typo="Typo.body1">If you author of some media and you wish to remove your art from my website, let me know through email. (with proofs)</MudText>
+                    <MudText Typo="Typo.body1">Most static content such emotes, i took from 7tv.app</MudText>
+                </MudCollapse>
+            </MudStack>
             <MudStack>
                 <MudText Class="d-flex align-center" Color="MudBlazor.Color.Tertiary"><MudIcon Icon="@Icons.Custom.Brands.Gmail"></MudIcon> cheekibreeki1109@gmail.com</MudText>
                 <MudText Class="d-flex align-center" Color="MudBlazor.Color.Tertiary"><MudIcon Icon="@Icons.Custom.Brands.Discord"></MudIcon> @@moro_gajima</MudText>
@@ -10,3 +18,9 @@
         </MudStack>
     </MudStack>
 </MudContainer>
+
+@code{
+    bool expanded = false;
+
+    private void OnExpandCollapseClick() => expanded = !expanded;
+}

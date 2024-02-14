@@ -145,36 +145,6 @@ namespace IcantHumor.WebAPI
         [HttpGet("GetCategorizedMediaPerPage/{page}/{itemsPerPage}/{categoriesStr}/{sorting}")]
         public async Task<ActionResult<IEnumerable<MediaViewModel>>> GetCategorizedMediaPerPage(int page, int itemsPerPage, string categoriesStr, Sort sorting)
         {
-            //if (_context.MediaFiles == null)
-            //{
-            //    return NotFound();
-            //}
-
-            //if (page == 0 || page == 1)
-            //{
-            //    return Ok(await _context.MediaFiles
-            //        .OrderByDescending(c => c.DateUpload)
-            //            .AsSingleQuery()
-            //            .Include(c => c.Categories)
-            //            .Include(r => r.WhoReacted)
-            //            .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
-            //            .Take(itemsPerPage)
-            //            .ToListAsync());
-
-            //}
-            //else
-            //{
-            //    int index = page * itemsPerPage - itemsPerPage;
-            //    return Ok(await _context.MediaFiles
-            //        .OrderByDescending(c => c.DateUpload)
-            //            .AsSingleQuery()
-            //            .Include(c => c.Categories)
-            //            .Include(r => r.WhoReacted)
-            //            .Where(m => m.Categories.Any(c => categoryGuids.Contains(c.Id)))
-            //            .Skip(index).Take(itemsPerPage)
-            //            .ToListAsync());
-            //}
-
             var categoryGuids = categoriesStr.Split('&')
                                 .Select(s => Guid.Parse(s))
                                 .ToList();
@@ -273,32 +243,6 @@ namespace IcantHumor.WebAPI
             {
                 return CreatedAtAction(nameof(GetMediaPerPage), page, itemsPerPage);
             }
-
-            //if (page == 0 || page == 1)
-            //{
-            //    return(await _context.MediaFiles
-            //        .OrderByDescending(c => c.DateUpload)
-            //        .AsSingleQuery()
-            //        .Include(r => r.WhoReacted)
-            //        .Include(c => c.Categories)
-            //        .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
-            //        m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
-            //        .Take(itemsPerPage)
-            //        .ToListAsync());
-            //}
-            //else
-            //{
-            //    int index = page * itemsPerPage - itemsPerPage;
-            //    return Ok(await _context.MediaFiles
-            //        .OrderByDescending(c => c.DateUpload)
-            //        .AsSingleQuery()
-            //        .Include(r => r.WhoReacted)
-            //        .Include(c => c.Categories)
-            //        .Where(m => m.Title.Trim().ToUpper().Contains(SearchText.Trim().ToUpper()) ||
-            //        m.Categories.Any(c => c.Name.Trim().ToUpper().Contains(SearchText.Trim().ToUpper())))
-            //        .Skip(index).Take(itemsPerPage)
-            //        .ToListAsync());
-            //}
 
             IQueryable<MediaViewModel> query = _context.MediaFiles.AsSingleQuery()
                 .Include(c => c.Categories)
@@ -547,6 +491,29 @@ namespace IcantHumor.WebAPI
             await _context.SaveChangesAsync();
 
             return Ok(mediaViewModel);
+        }
+
+        // DELETE: api/MediaFiles/43g34t-3434f34
+        [HttpDelete("DeleteAllMediaByCreatedUserId/{id}")]
+        public async Task<ActionResult<MediaViewModel>> DeleteAllMediaByCreatedUserId(Guid id)
+        {
+            if (_context.MediaFiles == null)
+            {
+                return NotFound();
+            }
+
+            var mediaFiles = await _context.MediaFiles.Include(b=>b.WhoReacted)
+                                                      .Where(a=>a.IdOfCreator == id)
+                                                      .ToListAsync();
+
+            foreach (var item in mediaFiles)
+            {
+                _context.MediaFiles.RemoveRange(mediaFiles);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(mediaFiles);
         }
 
         private bool MediaViewModelExists(Guid id)
