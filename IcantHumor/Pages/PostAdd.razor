@@ -49,7 +49,7 @@
                             <MudStack AlignItems="AlignItems.Center" Row="true">
                                 <MudAutocomplete SearchFunc="SearchFunc" @bind-Value="model.CategoryByUser" For="@(() => model.CategoryByUser)" Placeholder="Add tag" Variant="Variant.Text" AutoFocus="false"
                                                  ShowProgressIndicator="true" CoerceText="false" ResetValueOnEmptyText="false" CoerceValue="true" MaxLength="25"
-                                                 Required="true" ProgressIndicatorColor="Color.Primary" AnchorOrigin="Origin.BottomCenter"/>
+                                                 Required="true" ProgressIndicatorColor="Color.Primary" AnchorOrigin="Origin.BottomCenter" />
                                 <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="AddCategoryChip"></MudIconButton>
                             </MudStack>
                         </MudItem>
@@ -65,6 +65,19 @@
                         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Upload</MudButton>
                     }
                 </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h3">Base rules</MudText>
+                    <MudText>&bull; No NSFW</MudText>
+                    <MudText>&bull; No politics or debates of controversial nature</MudText>
+                    <MudText>&bull; No harassment</MudText>
+                    <MudText>&bull; No discrimination or hate speech</MudText>
+                    <MudText>&bull; No doxxing</MudText>
+                    <MudText>Try post something related to videogames</MudText>
+                </MudCardContent>
             </MudCard>
         </MudItem>
     </MudGrid>
