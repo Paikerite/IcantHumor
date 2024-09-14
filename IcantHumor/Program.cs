@@ -2,27 +2,25 @@
 using IcantHumor.Models;
 using IcantHumor.Services;
 using IcantHumor.Services.Interfaces;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MudBlazor;
 using MudBlazor.Services;
-using System.Configuration;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextPool<IHDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("IcantHumorDBConnection"),
-    o=>o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+    o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // Add services to the container.
 builder.Services.AddControllers()
-    .AddJsonOptions(options => {
+    .AddJsonOptions(options =>
+    {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.WriteIndented = true;
     });
@@ -56,12 +54,6 @@ builder.Services.AddMudServices(config =>
 //    // Once a user is authenticated, the OAuth2 token info is stored in cookies.
 //    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 //}).AddCookie()
-
-//.AddGoogleOpenIdConnect(options =>
-//{
-//    options.ClientId = "112990426089-bd2nau1l3dlgdjnl87q1tc8q4g8035sp.apps.googleusercontent.com";
-//    options.ClientSecret = "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";
-//});
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSwaggerGen(c =>

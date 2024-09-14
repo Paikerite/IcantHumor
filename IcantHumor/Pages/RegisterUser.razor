@@ -59,11 +59,11 @@
                             </MudItem>
                             <MudItem xs="12">
                                 <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png, .jpg, .jpeg" OnFilesChanged="UploadFile">
-                                    <ButtonTemplate>
-                                        <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" for="@context">
+                                    <ActivatorContent>
+                                        <MudButton HtmlTag="label" FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image">
                                             Upload image for avatar
                                         </MudButton>
-                                    </ButtonTemplate>
+                                    </ActivatorContent>
                                     <SelectedTemplate>
                                         @if (context != null)
                                         {

@@ -6,7 +6,7 @@
 <MudContainer>
     <MudGrid>
         <MudItem xs="12" sm="7" md="8">
-            @if (FavouritesMemes == null && chosenFavMeme == null)
+            @if (FavouritesMemes == null)
             {
                 <MudCard>
                     <MudCardContent>
@@ -55,7 +55,7 @@
         </MudItem>
         <MudItem xs="12" sm="5" md="4">
             <MudPaper>
-                <MudList Clickable="true" @bind-SelectedItem="selectedItem" @bind-SelectedValue="chosenFavMeme">
+                <MudList T="Guid" @bind-SelectedValue="chosenFavMeme" SelectionMode="SelectionMode.SingleSelection">
                     <MudListSubheader>
                         <MudText>Your favourites</MudText>
                     </MudListSubheader>
@@ -114,24 +114,24 @@
     public Guid? UserId { get; set; }
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private IFavouritesService favouritesService { get; set; }
+    private IFavouritesService favouritesService { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
-    [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    [CascadingParameter] 
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
-    private IEnumerable<FavouriteViewModel> FavouritesMemes { get; set; }
+    private IEnumerable<FavouriteViewModel> FavouritesMemes { get; set; } = default!;
 
-    MudListItem selectedItem;
+    // MudListItem<FavouriteViewModel> selectedItem;
 
-    private object chosenFavMeme { get; set; }
+    private Guid chosenFavMeme { get; set; }
 
-    private UserViewModel user { get; set; }
+    private UserViewModel user { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {

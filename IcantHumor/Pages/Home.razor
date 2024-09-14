@@ -66,7 +66,7 @@
 
 <MudGrid>
     <MudItem xs="12" sm="7" md="8">
-        <MudChipSet Filter="true" @bind-SelectedChips="selectedCategories" @bind-SelectedChips:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" MultiSelection="true">
+        <MudChipSet CheckMark="true" @bind-SelectedValues="selectedCategories" @bind-SelectedValues:after="InitMediaFiles" Class="d-flex flex-nowrap overflow-auto mb-3" SelectionMode="SelectionMode.MultiSelection">
             @if (categories != null && !isLoadingCategory)
             {
                 @foreach (var item in categories)
@@ -132,7 +132,7 @@
                                 @if (item.TypeOfFile is TypeOfFile.Video)
                                 {
                                     <BlazoredVideo class="w-100 rounded-lg"
-                                                   style="max-width:290px;"
+                                                   style="max-width:100%;"
                                                    controls="controls"
                                                    loop="loop">
                                         <source src="@item.UrlToFile" type="video/mp4" />
@@ -143,11 +143,11 @@
                                     <MudImage Fluid="true" Src="@item.UrlToFile" Class="rounded-lg"></MudImage>
                                 }
                                 <MudText Typo="Typo.h6">@item.Title</MudText>
-                                </MudBadge>
-                            </MudCardContent>
-                        </MudLink>
-                        <MudCardActions Class="d-flex justify-space-between">
-                            <div>
+                            </MudBadge>
+                        </MudCardContent>
+                    </MudLink>
+                    <MudCardActions Class="d-flex justify-space-between">
+                        <div>
                             <MudTooltip Text="Funny" Placement="Placement.Top">
                                 <MudButton @onclick="()=>PutReact(React.Like, item.Id)" Variant="Variant.Text" aria-label="kek">
                                     <MudImage Class="me-1" Src="/staticimgs/ICANT1x.webp"></MudImage>
@@ -194,36 +194,36 @@
     public int? sorting { get; set; }
 
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
     [Inject]
-    private IMediaFilesService mediaFilesService { get; set; }
+    private IMediaFilesService mediaFilesService { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigation { get; set; }
+    private NavigationManager navigation { get; set; } = default!;
 
     [Inject]
-    private IReactedUserService reactedUserService { get; set; }
+    private IReactedUserService reactedUserService { get; set; } = default!;
 
     [Inject]
-    private ICategoriesService categoriesService { get; set; }
+    private ICategoriesService categoriesService { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
-    private IEnumerable<MediaViewModel> memes { get; set; }
-    private IEnumerable<CategoryViewModel> categories { get; set; }
-    private IEnumerable<Guid> selectedCategoryGuidsByUrl { get; set; }
-    private UserViewModel user { get; set; }
+    private IEnumerable<MediaViewModel> memes { get; set; } = default!;
+    private IEnumerable<CategoryViewModel> categories { get; set; } = default!;
+    private IEnumerable<Guid> selectedCategoryGuidsByUrl { get; set; } = default!;
+    private UserViewModel user { get; set; } = default!;
 
     private int ItemsPerPage { get; set; } = 8;
 
@@ -239,13 +239,13 @@
 
     private bool isLoadingCategory { get; set; } = false;
 
-    public string SearchText { get; set; }
+    public string? SearchText { get; set; }
 
-    public string SearchCategory { get; set; }
+    public string? SearchCategory { get; set; }
 
-    public MudChip[] selectedCategories;
+    public IReadOnlyCollection<Guid> selectedCategories = default!;
 
-    private AuthenticationState authState { get; set; }
+    private AuthenticationState authState { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -376,14 +376,14 @@
         isLoadingMedia = true;
         try
         {
-            if (selectedCategories != null && selectedCategories.Length != 0)
+            if (selectedCategories != null && selectedCategories.Count != 0)
             {
-                var selectedCategr = selectedCategories.Select(ct => (Guid)ct.Value);
-                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategr, SelectedSort);
-                GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesIncludeCategories(selectedCategr);
+                // var selectedCategr = selectedCategories.Select(ct => ct.Value);
+                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategories, SelectedSort);
+                GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesIncludeCategories(selectedCategories);
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
-                string ctgStr = string.Join("&", selectedCategr);
+                string ctgStr = string.Join("&", selectedCategories);
                 string uri = navigation.GetUriWithQueryParameters(
                         new Dictionary<string, object?>
                             {

@@ -28,8 +28,8 @@
                         <MudBadge Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
                             <MudButton OnClick="EditTitleStatus" Variant="Variant.Text">
                                 <MudText Typo="Typo.h4">@media.Title</MudText>
-                                </MudButton>
-                            </MudBadge>
+                            </MudButton>
+                        </MudBadge>
                     }
                 }
                 else
@@ -38,7 +38,7 @@
                 }
             </MudItem>
             <MudItem xs="12">
-                <MudPaper>
+                <MudPaper Width="100%">
                     <MudToolBar Class="d-flex justify-space-between">
                         <AuthorizeView>
                             <Authorized>
@@ -72,7 +72,7 @@
                         <MudButton Variant="Variant.Filled" OnClick="CopyLinkToClipBoard" Color="Color.Primary">
                             @if (isCopied)
                             {
-                                <MudIcon Class="ms-n1" Size="Size.Small" Icon="@Icons.Material.Filled.Check"/>
+                                <MudIcon Class="ms-n1" Size="Size.Small" Icon="@Icons.Material.Filled.Check" />
                                 <MudText Class="ms-2">Copied</MudText>
                             }
                             else
@@ -84,12 +84,12 @@
                     </MudToolBar>
                 </MudPaper>
             </MudItem>
-            <MudPaper Width="100%">
-                <MudItem Class="d-flex justify-center my-3" xs="12">
+            <MudItem xs="12">
+                <MudPaper Width="100%" Class="d-flex justify-center py-4">
                     @if (media.TypeOfFile is TypeOfFile.Video)
                     {
                         <BlazoredVideo class="w-100 rounded-lg"
-                                       style="max-width:720px;"
+                                       style="max-width:100%;"
                                        loop="loop"
                                        controls="controls">
                             <source src="@media.UrlToFile" type="video/mp4" />
@@ -99,46 +99,48 @@
                     {
                         <MudImage Fluid="true" Width="720" Src="@media.UrlToFile" Alt="@media.Title" />
                     }
-                </MudItem>
-            </MudPaper>
-            <MudPaper Width="100%" Class="mt-3">
-                <MudItem xs="12" Class="mt-5 mx-4">
-                    <MudChipSet ReadOnly="false">
-                        @foreach (var item in media.Categories)
-                        {
-                            <MudChip Href="@($"/?page=1&categories={item.Id}")" Text="@item.Name"></MudChip>
-                        }
-                    </MudChipSet>
-                </MudItem>
-                <MudItem xs="12" Class="ma-5">
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        @if (userOfUploader != null)
-                        {
-                            <MudLink Href="@($"/InfoUser/{media.IdOfCreator}")" Class="d-flex align-center" Underline="Underline.None" Color="Color.Default">
-                                <MudAvatar Color="Color.Primary" Class="mr-2">
-                                    @if (userOfUploader.ProfilePicture != null)
-                                    {
-                                        <MudImage Src="@userOfUploader.ProfilePicture"></MudImage>
-                                    }
-                                    else
-                                    {
-                                        @userOfUploader.UserName[0]
-                                    }
-                                </MudAvatar>
-                                @userOfUploader.UserName
-                            </MudLink>
-                            <MudText Class="d-flex justify-end flex-grow-1">
-                                Uploaded by @media.DateUpload.ToString("d")
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px"></MudSkeleton>
-                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="150px"></MudSkeleton>
-                        }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                <MudPaper Width="100%" Class="pa-4">
+                    <MudStack>
+                        <MudPaper Width="100%" Class="pa-4" Style="box-shadow: 0px 3px 5px -1px var(--mud-palette-primary),0px 5px 8px 0px var(--mud-palette-primary),0px 1px 14px 0px var(--mud-palette-primary);">
+                            <MudChipSet T="string" ReadOnly="false">
+                                @foreach (var item in media.Categories)
+                                {
+                                    <MudChip Href="@($"/?page=1&categories={item.Id}")" Text="@item.Name"></MudChip>
+                                }
+                            </MudChipSet>
+                        </MudPaper>
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            @if (userOfUploader != null)
+                            {
+                                <MudLink Href="@($"/InfoUser/{media.IdOfCreator}")" Class="d-flex align-center" Underline="Underline.None" Color="Color.Default">
+                                    <MudAvatar Color="Color.Primary" Class="mr-2">
+                                        @if (userOfUploader.ProfilePicture != null)
+                                        {
+                                            <MudImage ObjectFit="ObjectFit.Cover" Src="@userOfUploader.ProfilePicture"></MudImage>
+                                        }
+                                        else
+                                        {
+                                            @userOfUploader.UserName[0]
+                                        }
+                                    </MudAvatar>
+                                    @userOfUploader.UserName
+                                </MudLink>
+                                <MudText Class="d-flex justify-end flex-grow-1">
+                                    Uploaded by @media.DateUpload.ToString("d")
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="50px" Height="50px"></MudSkeleton>
+                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="150px"></MudSkeleton>
+                            }
+                        </MudStack>
                     </MudStack>
-                </MudItem>
-            </MudPaper>
+                </MudPaper>
+            </MudItem>
         }
         else
         {

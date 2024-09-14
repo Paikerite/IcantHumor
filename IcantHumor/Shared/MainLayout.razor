@@ -3,6 +3,7 @@
 <MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider/>
 
 <MudLayout>
     <MudAppBar Elevation="3" Fixed="true" Class="d-flex justify-space-between flex-grow-1 gap-4" Style="background: rgba(33,33,33, 0.5) !important; backdrop-filter: blur(10px);">
@@ -19,7 +20,6 @@
                     <MudButton FullWidth="true" Target="_parent" Href="/Favourites" Variant="Variant.Text" Size="Size.Large">Favourites</MudButton>
                 </Authorized>
             </AuthorizeView>
-            @* <MudButton FullWidth="true" OnClick="TestFunc" Variant="Variant.Text" Size="Size.Large">Test</MudButton> *@
         </MudStack>
         <AuthorizeView>
             <Authorized>
@@ -32,7 +32,7 @@
                             }
                             else if (userViewModel.ProfilePicture != null)
                             {
-                                <MudImage Src="@userViewModel.ProfilePicture"></MudImage>
+                                <MudImage ObjectFit="ObjectFit.Cover" Src="@userViewModel.ProfilePicture"></MudImage>
                             }
                             else
                             {
@@ -145,30 +145,6 @@
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
     }
-
-    // private async Task TestFunc()
-    // {
-    //     try
-    //     {
-    //         Random rnd = new Random();
-    //         var ConfirmCode = rnd.Next(100000,999999).ToString();
-    //         string htmlMessage = @$"<p>Code for confirmation email, copy it and put it in the field:</p><h2><strong>{ConfirmCode}</strong></h2><p><strong>Warning: </strong>code will work only next 2 minutes</p><blockquote><p>IcantHumor &copy; 2024</p></blockquote>";
-    //         await emailSender.SendEmailAsync("norkov900@gmail.com", "senya", htmlMessage);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
-    //         Console.WriteLine(ex.Message);
-    //     }
-    // }
-
-    // private async Task IsConfirmEmailCheck(Guid id)
-    // {
-    //     var user = await usersService.GetUser(id, true);
-    //     if (!user.FullUserInfo.ConfirmEmail){
-    //         navigationManager.NavigateTo("/ConfirmEmail", true);
-    //     }
-    // }
 
     private async Task Logout()
     {

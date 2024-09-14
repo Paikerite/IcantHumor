@@ -13,7 +13,7 @@
                         <MudItem xs="12">
                             <MudFileUpload T="IBrowserFile" Disabled="isLoading" OnFilesChanged="UploadFile" For="@(() => model.File)" @bind-Files="model.File" Hidden="false" Class="flex-1" Accept=".png, .jpg, .jpeg, .gif, .mp4" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
                                            @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
-                                <ButtonTemplate>
+                                <ActivatorContent>
                                     <MudPaper Outlined="true" Height="350px" Class="@DragClass">
                                         @if (model.File == null)
                                         {
@@ -33,14 +33,14 @@
                                             </MudStack>
                                         }
                                     </MudPaper>
-                                </ButtonTemplate>
+                                </ActivatorContent>
                             </MudFileUpload>
                         </MudItem>
                         <MudItem xs="12">
                             <MudTextField @bind-Value="model.Title" For="@(()=>model.Title)" Counter="50" MaxLength="50" Immediate="true" Label="Title" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudChipSet AllClosable="true" OnClose="RemoveCategoryChip">
+                            <MudChipSet T="string" AllClosable="true" OnClose="RemoveCategoryChip">
                                 @foreach (var valueOfChip in valuesOfChips)
                                 {
                                     <MudChip Text="@valueOfChip.Name" Size="Size.Large"></MudChip>
@@ -128,7 +128,7 @@
 
     List<CategoryViewModel> valuesOfChips = new List<CategoryViewModel>();
 
-    public void RemoveCategoryChip(MudChip chip) => valuesOfChips.Remove(valuesOfChips.First(v => v.Name == chip.Text));
+    public void RemoveCategoryChip(MudChip<string> chip) => valuesOfChips.Remove(valuesOfChips.First(v => v.Name == chip.Text));
 
     private int maxFileSize = 1024 * 1024 * 30; // 30MB
 
@@ -145,7 +145,7 @@
         User = await usersService.GetUserByName(userName);
     }
 
-    public async Task<IEnumerable<string>> SearchFunc(string search)
+    public async Task<IEnumerable<string>> SearchFunc(string search, CancellationToken token)
     {
         categories = await categoriesService.GetCategories();
         if (string.IsNullOrEmpty(search))

@@ -77,15 +77,14 @@ else
                             </MudItem>
                             <MudItem xs="12">
                                 <MudFileUpload T="IBrowserFile" @bind-Files="model.File" For="@(() => model.File)" Accept=".png" OnFilesChanged="UploadFile">
-                                    <ButtonTemplate>
+                                    <ActivatorContent>
                                         <MudButton HtmlTag="label"
                                                    Variant="Variant.Filled"
                                                    Color="Color.Primary"
-                                                   StartIcon="@Icons.Material.Filled.CloudUpload"
-                                                   for="@context">
+                                                   StartIcon="@Icons.Material.Filled.CloudUpload">
                                             Upload Avatar
                                         </MudButton>
-                                    </ButtonTemplate>
+                                    </ActivatorContent>
                                     <SelectedTemplate>
                                         @if (context != null && context.Size <= maxFileSize)
                                         {
