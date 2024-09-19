@@ -1,5 +1,6 @@
 ﻿@page "/OAuthRedirectSuccessDiscord"
 @using Microsoft.AspNetCore.WebUtilities
+
 <PageTitle>Success Registration</PageTitle>
 <div class="d-flex flex-grow-1 flex-column align-center">
     @if (infouser != null)
@@ -22,24 +23,27 @@
 
 @code {
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private IDiscordAPIService discordAPIService { get; set; }
+    private IDiscordAPIService discordAPIService { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    private AuthenticationStateProvider authenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
-    public UserInfoDiscordAPI infouser { get; set; }
+    [Inject]
+    private ILogger<OAuthRedirectSuccessDiscord> logger { get; set; } = default!;
+
+    public UserInfoDiscordAPI infouser { get; set; } = default!;
 
     public bool IsSuccess { get; set; }
 
@@ -51,9 +55,20 @@
         {
             try
             {
-                var tokenResponse = await discordAPIService.GetTokenAsync(authorizationCode);
-                infouser = await discordAPIService.GetUserInfoAsync(tokenResponse.access_token);
-                if (!infouser.verified)
+                if (string.IsNullOrEmpty(authorizationCode)) throw new NullReferenceException("authorizationCode is broken, try login again");
+
+                var tokenResponse = await discordAPIService.GetTokenAsync(authorizationCode) 
+                    ?? throw new NullReferenceException("response token is null, try login again");
+
+                if (tokenResponse.access_token is null)
+                {
+                    throw new NullReferenceException("access token is null");
+                }
+
+                infouser = await discordAPIService.GetUserInfoAsync(tokenResponse.access_token) 
+                    ?? throw new NullReferenceException("infouser discord is null, try login again");
+
+                if (!infouser.verified || string.IsNullOrEmpty(infouser.email))
                 {
                     throw new Exception("Your discord account isn't verified. Confirm your discord account, then try again..");
                 }
@@ -67,6 +82,10 @@
                     await Register(infouser);
                 }
             }
+            catch (NullReferenceException e)
+            {
+                logger.LogWarning(e.Message);
+            }
             catch (Exception ex)
             {
                 Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
@@ -76,8 +95,13 @@
 
     private async Task SingIn(UserInfoDiscordAPI user)
     {
+        if (user.email is null || user.email == string.Empty)
+        {
+            throw new NullReferenceException("user email is empty or null");
+        }
+
         var result = await usersService.GetUserByEmail(user.email);
-        if (result != null)
+        if (result is not null && result.UserName is not null)
         {
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
                 {
@@ -112,7 +136,7 @@
                 };
 
             var result = await usersService.PostUser(userViewModel);
-            if (result != null)
+            if (result is not null && result.UserName is not null)
             {
                 var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
                     {
@@ -133,15 +157,15 @@
         }
     }
 
-    public string GetAvatarUrl(UserInfoDiscordAPI user)
+    public string? GetAvatarUrl(UserInfoDiscordAPI user)
     {
-        if (string.IsNullOrEmpty(user.avatar))
+        if (string.IsNullOrEmpty(user.avatar) && !string.IsNullOrEmpty(user.discriminator))
         {
             return $"https://cdn.discordapp.com/embed/avatars/{int.Parse(user.discriminator) % 5}.png";
         }
-        else if (user.avatar.StartsWith("a_"))
+        else if (!string.IsNullOrEmpty(user.avatar) && user.avatar.StartsWith("a_"))
         {
-            return null;
+            return default;
         }
         else
         {

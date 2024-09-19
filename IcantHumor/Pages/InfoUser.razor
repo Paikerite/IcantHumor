@@ -14,7 +14,7 @@ else
         <MudItem xs="12" sm="3" md="2">
             <MudPaper Class="pa-3">
                 <MudStack Justify="Justify.Center">
-                    @if (user == null)
+                    @if (user is null || user.UserName is null)
                     {
                         <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                     }
@@ -32,7 +32,7 @@ else
                             </MudAvatar>
                         </div>
                     }
-                    @if (user == null)
+                    @if (user is null || user.FullUserInfo is null)
                     {
                         <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                     }
@@ -62,7 +62,7 @@ else
                 </MudStack>
             </MudPaper>
         </MudItem>
-        @if (user != null && user.UserName == authState.User.Identity.Name)
+        @if (user != null && user.UserName == IdentityName)
         {
             <MudItem xs="12" sm="9" md="4">
                 <MudPaper Class="pa-3">
@@ -70,10 +70,10 @@ else
                         <DataAnnotationsValidator />
                         <MudGrid>
                             <MudItem xs="12">
-                                <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserName)" />
+                                <MudTextField Label="Username" Variant="Variant.Filled" Underline="false" @bind-Value="model.UserName" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserName)" />
                             </MudItem>
                             <MudItem xs="12">
-                                <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                                <MudTextField Label="Email" Variant="Variant.Filled" Underline="false" Class="mt-3" @bind-Value="model.UserEmail" @bind-Value:after="@IsUnsavedData" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                             </MudItem>
                             <MudItem xs="12">
                                 <MudFileUpload T="IBrowserFile" @bind-Files="model.File" For="@(() => model.File)" Accept=".png" OnFilesChanged="UploadFile">
@@ -124,7 +124,7 @@ else
                     {
                         foreach (var item in FavouritesRecentlyAdded)
                         {
-                            if (item.FavMedia.TypeOfFile == TypeOfFile.Img || item.FavMedia.TypeOfFile == TypeOfFile.Gif)
+                            if (item.FavMedia is not null && (item.FavMedia.TypeOfFile == TypeOfFile.Img || item.FavMedia.TypeOfFile == TypeOfFile.Gif))
                             {
                                 <MudCarouselItem @onclick="()=>NavigateToSource(item.FavMedia.Id)" Transition="Transition.Fade" Color="@Color.Dark">
                                     <div class="d-flex justify-center" style="height:100%">
@@ -153,52 +153,57 @@ else
     public Guid UserID { get; set; }
 
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    private AuthenticationStateProvider authenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private IMediaFilesService mediaFilesService { get; set; }
+    private IMediaFilesService mediaFilesService { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
     [Inject]
-    private IJSRuntime JS { get; set; }
+    private IJSRuntime JS { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IFavouritesService favouritesService { get; set; }
+    private IFavouritesService favouritesService { get; set; } = default!;
 
-    private IEnumerable<FavouriteViewModel> FavouritesRecentlyAdded { get; set; }
+    [Inject]
+    private ILogger<InfoUser> logger { get; set; } = default!;
+
+    private IEnumerable<FavouriteViewModel> FavouritesRecentlyAdded { get; set; } = default!;
 
     private bool isLoading { get; set; } = false;
 
     private const string KeyForSnackbar = "UnsavedWarning";
 
-    private Snackbar WarningUnSavedInfo { get; set; }
+    private Snackbar WarningUnSavedInfo { get; set; } = default!;
 
     private int maxFileSize = 1024 * 1024 * 2; // 2MB
 
-    private AuthenticationState authState { get; set; }
+    private AuthenticationState authState { get; set; } = default!;
 
-    private UserViewModel user { get; set; }
+    private string IdentityName { get; set; } = default!;
+
+    private UserViewModel user { get; set; } = default!;
 
     private class Model
     {
         [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
         [EmailAddress]
-        public string UserEmail { get; set; }
+        public string? UserEmail { get; set; }
         public IBrowserFile? File { get; set; }
     }
 
@@ -208,14 +213,29 @@ else
     {
         try
         {
-            authState = await authenticationState;
-            user = await usersService.GetUser(UserID, true);
-            FavouritesRecentlyAdded = await favouritesService.GetCountFavouritesByUser(UserID, 8);
+            authState = await authenticationState 
+                ?? throw new NullReferenceException("authenticationState is null");
+
+            if (authState.User.Identity is null) 
+                throw new NullReferenceException("identity is null");
+
+            IdentityName = authState.User.Identity.Name 
+                ?? throw new NullReferenceException("identityName is null");
+
+            user = await usersService.GetUser(UserID, true) 
+                ?? throw new NullReferenceException("user is null after request");
+
+            FavouritesRecentlyAdded = await favouritesService.GetCountFavouritesByUser(UserID, 8) 
+                ?? throw new NullReferenceException("FavouritesRecentlyAdded is null after request");
 
             // if (user.UserName != authState.User.Identity.Name)
             // {
             //     navigationManager.NavigateTo("/", replace: true);
             // }
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -255,8 +275,14 @@ else
     private async Task OnValidEdit(EditContext context)
     {
         isLoading = true;
-        string urlToFile = null;
-        string oldAvatarImgToDelete = null;
+        string? urlToFile = null;
+        string? oldAvatarImgToDelete = null;
+
+        if (user.FullUserInfo is null)
+        {
+            logger.LogWarning("user.FullUserInfo is null");
+            return;    
+        };
 
         var model = (Model)context.Model;
         if (model.File != null)
@@ -265,13 +291,16 @@ else
             oldAvatarImgToDelete = user.ProfilePicture;
         }
 
+
         user.UserName = model.UserName != null ? model.UserName : user.UserName;
         user.FullUserInfo.UserEmail = model.UserEmail != null ? model.UserEmail : user.FullUserInfo.UserEmail;
         user.ProfilePicture = urlToFile != null ? urlToFile : user.ProfilePicture;
 
         try
         {
-            if (await usersService.IsExistNameUserInDB(user.UserName) && user.UserName != authState.User.Identity.Name)
+            if (user.UserName is null) throw new NullReferenceException("user UserName is null");
+
+            if (await usersService.IsExistNameUserInDB(user.UserName) && user.UserName != IdentityName)
             {
                 throw new Exception("This Username was already taken, try another");
             }
@@ -279,6 +308,8 @@ else
             var result = await usersService.PutUser(user.Id, user);
             if (result != null)
             {
+                if (result.UserName is null) throw new NullReferenceException("result UserName is null");
+
                 if (oldAvatarImgToDelete != null)
                 {
                     System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldAvatarImgToDelete));
@@ -302,6 +333,7 @@ else
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.Message);
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
         isLoading = false;
@@ -324,7 +356,7 @@ else
         StateHasChanged();
     }
 
-    private async Task<string> CaptureFile()
+    private async Task<string?> CaptureFile()
     {
         if (model.File == null)
         {

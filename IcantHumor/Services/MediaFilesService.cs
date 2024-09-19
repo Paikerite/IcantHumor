@@ -1,13 +1,8 @@
-﻿using Azure;
-using IcantHumor.Models;
+﻿using IcantHumor.Models;
 using IcantHumor.Models.Enums;
 using IcantHumor.Services.Interfaces;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace IcantHumor.Services
 {
@@ -19,7 +14,7 @@ namespace IcantHumor.Services
             this.httpClient = httpClient;
         }
 
-        public async Task<MediaViewModel> DeleteMediaViewModel(Guid id)
+        public async Task<MediaViewModel?> DeleteMediaViewModel(Guid id)
         {
             var response = await httpClient.DeleteAsync($"api/MediaFiles/{id}");
             if (response.IsSuccessStatusCode)
@@ -29,7 +24,7 @@ namespace IcantHumor.Services
             return default(MediaViewModel);
         }
 
-        public async Task<IEnumerable<MediaViewModel>> DeleteAllMediaByCreatedUserId(Guid guid)
+        public async Task<IEnumerable<MediaViewModel>?> DeleteAllMediaByCreatedUserId(Guid guid)
         {
             var products = await this.httpClient.DeleteAsync($"api/MediaFiles/DeleteAllMediaByCreatedUserId/{guid}");
             if (products.IsSuccessStatusCode)
@@ -47,7 +42,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFiles()
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaFiles()
         {
             var products = await this.httpClient.GetAsync("api/MediaFiles");
             if (products.IsSuccessStatusCode)
@@ -65,7 +60,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategories(IEnumerable<Guid> categories)
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaFilesByCategories(IEnumerable<Guid> categories)
         {
             string content = string.Join("&", categories);
 
@@ -85,7 +80,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds, Sort sorting)
+        public async Task<IEnumerable<MediaViewModel>?> GetCategorizedMediaPerPage(int page, int itemsPerPage, IEnumerable<Guid> categoriesIds, Sort sorting)
         {
             string content = string.Join("&", categoriesIds);
 
@@ -105,7 +100,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaPerPage(int page, int itemsPerPage, Sort sorting)
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaPerPage(int page, int itemsPerPage, Sort sorting)
         {
             var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaPerPage/{page}/{itemsPerPage}/{sorting}");
             if (products.IsSuccessStatusCode)
@@ -123,7 +118,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByCategory(Guid categoryId)
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaFilesByCategory(Guid categoryId)
         {
             var response = await httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByCategory/{categoryId}");
             if (response.IsSuccessStatusCode)
@@ -142,7 +137,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByName(string SearchText)
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaFilesByName(string SearchText)
         {
             var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByName/{SearchText}");
             if (products.IsSuccessStatusCode)
@@ -160,7 +155,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> GetMediaViewModel(Guid id)
+        public async Task<MediaViewModel?> GetMediaViewModel(Guid id)
         {
             var response = await this.httpClient.GetAsync($"api/MediaFiles/{id}");
             if (response.IsSuccessStatusCode)
@@ -178,7 +173,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> MakeReactionInPost(Guid idPost, ReactedUserViewModel reactedUser)
+        public async Task<MediaViewModel?> MakeReactionInPost(Guid idPost, ReactedUserViewModel reactedUser)
         {
             var JsonRequest = JsonConvert.SerializeObject(reactedUser);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
@@ -199,7 +194,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds)
+        public async Task<MediaViewModel?> PatchCategoryInPost(Guid idPost, IEnumerable<Guid> categoriesIds)
         {
             var JsonRequest = JsonConvert.SerializeObject(categoriesIds);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
@@ -220,7 +215,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> PostMediaViewModel(MediaViewModel mediaViewModel)
+        public async Task<MediaViewModel?> PostMediaViewModel(MediaViewModel mediaViewModel)
         {
             var response = await httpClient.PostAsJsonAsync<MediaViewModel>("api/MediaFiles", mediaViewModel);
             if (response.IsSuccessStatusCode)
@@ -239,7 +234,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> PutMediaViewModel(Guid id, MediaViewModel mediaViewModel)
+        public async Task<MediaViewModel?> PutMediaViewModel(Guid id, MediaViewModel mediaViewModel)
         {
             var JsonRequest = JsonConvert.SerializeObject(mediaViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
@@ -261,7 +256,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> UnMakeReactionInPost(Guid idPost, ReactedUserViewModel reactedUser)
+        public async Task<MediaViewModel?> UnMakeReactionInPost(Guid idPost, ReactedUserViewModel reactedUser)
         {
             var JsonRequest = JsonConvert.SerializeObject(reactedUser);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
@@ -319,7 +314,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<MediaViewModel>> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage, Sort sorting)
+        public async Task<IEnumerable<MediaViewModel>?> GetMediaFilesByNameByPages(string SearchText, int page, int itemsPerPage, Sort sorting)
         {
             var products = await this.httpClient.GetAsync($"api/MediaFiles/GetMediaFilesByNameByPages/{SearchText}/{page}/{itemsPerPage}/{sorting}");
             if (products.IsSuccessStatusCode)
@@ -355,7 +350,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<MediaViewModel> UpdateTitlePost(Guid idPost, string title)
+        public async Task<MediaViewModel?> UpdateTitlePost(Guid idPost, string title)
         {
             UpdateTitleMediaFiles model = new() { NewTitle = title };
             var JsonRequest = JsonConvert.SerializeObject(model);

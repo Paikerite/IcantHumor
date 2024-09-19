@@ -85,46 +85,51 @@
 
 @code {
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
     [Inject]
-    private IMediaFilesService mediaFilesService { get; set; }
+    private IMediaFilesService mediaFilesService { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private IJSRuntime JS { get; set; }
+    private IJSRuntime JS { get; set; } = default!;
 
     [Inject]
-    private ICategoriesService categoriesService { get; set; }
+    private ICategoriesService categoriesService { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ILogger<MainLayout> logger { get; set; } = default!;
 
-    private IEnumerable<CategoryViewModel> categories { get; set; }
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
 
-    private UserViewModel User { get; set; }
+    private IEnumerable<CategoryViewModel> categories { get; set; } = default!;
+
+    private UserViewModel User { get; set; } = default!;
 
     private class PostAddModel
     {
         [Required]
         [MaxLength(50)]
         [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
-        public string Title { get; set; }
-        public IBrowserFile File { get; set; }
+        public string? Title { get; set; }
+        public IBrowserFile? File { get; set; }
 
         [Required]
         [MaxLength(50)]
         [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
-        public string CategoryByUser { get; set; }
+        public string? CategoryByUser { get; set; }
         //public IEnumerable<string> Categories { get; set; }
     }
 
-    private PostAddModel model = new();
+    private PostAddModel model { get; set; } = new();
+
+    private string userName { get; set; } = default!;
 
     List<CategoryViewModel> valuesOfChips = new List<CategoryViewModel>();
 
@@ -141,13 +146,24 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await authenticationState;
-        var userName = authState.User.Identity.Name;
-        User = await usersService.GetUserByName(userName);
+        try
+        {
+            userName = authState.User.Identity?.Name 
+                ?? throw new NullReferenceException("Name is null after access authState identity");
+            User = await usersService.GetUserByName(userName) 
+                ?? throw new NullReferenceException("User is null after request");
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
+        }
     }
 
     public async Task<IEnumerable<string>> SearchFunc(string search, CancellationToken token)
     {
-        categories = await categoriesService.GetCategories();
+        categories = await categoriesService.GetCategories() 
+            ?? throw new NullReferenceException("categories is null after response");
+
         if (string.IsNullOrEmpty(search))
         {
             return categories.Select(n => n.Name);
@@ -188,37 +204,41 @@
     private async Task OnValidPost()
     {
         isLoading = true;
-        string urlToFile;
+        string? urlToFile;
 
         try
         {
             if (model.File != null)
             {
-                urlToFile = await CaptureFile();
+                urlToFile = await CaptureFile() ?? throw new Exception("You have to upload some media");
             }
             else
             {
                 throw new Exception("You have to upload some media");
             }
             var authState = await authenticationState;
-            var user = await usersService.GetUserByName(authState.User.Identity.Name);
+            var user = await usersService.GetUserByName(userName);
 
-            MediaViewModel mediaViewModel = new();
+            MediaViewModel mediaViewModel = new()
+            {
+                // IdOfCreator = user.Id,
+                Title = model.Title ?? throw new NullReferenceException("title is null from model"),
+                UrlToFile = urlToFile,
+                TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile),
+                DateUpload = DateTime.Now,
+                IdOfCreator = User.Id,
+            };
 
-            // mediaViewModel.IdOfCreator = user.Id;
-            mediaViewModel.Title = model.Title;
-            mediaViewModel.UrlToFile = urlToFile;
-            mediaViewModel.TypeOfFile = GetTypeFile.GetTypeOfFile(urlToFile);
-            mediaViewModel.DateUpload = DateTime.Now;
-            mediaViewModel.IdOfCreator = User.Id;
-
-            categories = await categoriesService.GetCategories();
+            categories = await categoriesService.GetCategories()
+                ?? throw new NullReferenceException("categories is null after response");
             List<Guid> categoriesIdToAdd = new();
             foreach (var item in valuesOfChips)
             {
                 if (!categories.Any(c => c.Name == item.Name))
                 {
-                    var res = await categoriesService.PostCategory(item);
+                    var res = await categoriesService.PostCategory(item) 
+                        ?? throw new NullReferenceException("postCategory is null after response");
+
                     categoriesIdToAdd.Add(res.Id);
                 }
                 else
@@ -227,7 +247,8 @@
                 }
             }
 
-            MediaViewModel postResult = await mediaFilesService.PostMediaViewModel(mediaViewModel);
+            MediaViewModel postResult = await mediaFilesService.PostMediaViewModel(mediaViewModel) 
+                ?? throw new NullReferenceException("postResultMedia is null after response");
 
             if (postResult != null)
             {
@@ -273,11 +294,11 @@
         StateHasChanged();
     }
 
-    private async Task<string> CaptureFile()
+    private async Task<string?> CaptureFile()
     {
         if (model.File == null)
         {
-            return null;
+            return default;
         }
         try
         {
@@ -304,7 +325,7 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
-            return null;
+            return default;
         }
     }
 

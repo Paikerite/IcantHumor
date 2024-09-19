@@ -46,16 +46,16 @@
                         <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Registration</b></MudText>
                         </MudItem> *@
                             <MudItem xs="12">
-                                <MudTextField Label="Username" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                                <MudTextField Label="Username" Variant="Variant.Filled" Underline="false" @bind-Value="model.UserName" For="@(() => model.UserName)" />
                             </MudItem>
                             <MudItem xs="12">
-                                <MudTextField Label="Email" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
+                                <MudTextField Label="Email" Variant="Variant.Filled" Underline="false" Class="mt-3" @bind-Value="model.UserEmail" For="@(() => model.UserEmail)" InputType="InputType.Email" />
                             </MudItem>
                             <MudItem xs="12" sm="6">
-                                <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                                <MudTextField Label="Password" Variant="Variant.Filled" Underline="false" HelperText="Choose a strong password (min. 6 characters)" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                             </MudItem>
                             <MudItem xs="12" sm="6">
-                                <MudTextField Label="Confirm password" Variant="Variant.Filled" DisableUnderLine="true" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
+                                <MudTextField Label="Confirm password" Variant="Variant.Filled" Underline="false" HelperText="Repeat the password" Class="mt-3" @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)" InputType="InputType.Password" />
                             </MudItem>
                             <MudItem xs="12">
                                 <MudFileUpload T="IBrowserFile" For="@(() => model.File)" @bind-Files="model.File" Class="mt-3" Accept=".png, .jpg, .jpeg" OnFilesChanged="UploadFile">
@@ -83,7 +83,7 @@
                             </MudItem>
                             <MudItem xs="12">
                                 <MudPaper Elevation="0" Outlined="true">
-                                    <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
+                                    <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Value="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
                                 </MudPaper>
                             </MudItem>
                         </MudGrid>
@@ -150,67 +150,70 @@
 
 @code {
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    private AuthenticationStateProvider authenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
     [Inject]
-    private IJSRuntime JS { get; set; }
+    private IJSRuntime JS { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; }
+    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; } = default!;
 
     [Inject]
-    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; }
+    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; } = default!;
 
     private class RegisterModel
     {
         [Required]
         [MinLength(3, ErrorMessage = "Minimum symbols - 3")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
         [Required]
         [EmailAddress]
-        public string UserEmail { get; set; }
+        public string? UserEmail { get; set; }
         public IBrowserFile? File { get; set; }
         [Required]
         [MinLength(6, ErrorMessage = "Minimum symbols - 6")]
         [RegularExpression("^(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]+$", ErrorMessage = "Only english. At least one number and one capital letter")]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
         [Required]
         [Compare("Password")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
         public bool Remember { get; set; } = true;
     }
 
     private RegisterModel model = new();
 
-    private UserViewModel userViewModel { get; set; }
+    private UserViewModel userViewModel { get; set; } = default!;
 
     [Inject]
-    private IEmailSender emailSender { get; set; }
+    private IEmailSender emailSender { get; set; } = default!;
 
     private bool isLoading { get; set; } = false;
 
     private bool isConfirmation { get; set; } = false;
 
-    public string ConfirmCode { get; set; }
+    public string ConfirmCode { get; set; } = default!;
 
-    public string CodeToConfirm { get; set; }
+    public string CodeToConfirm { get; set; } = default!;
 
     public TimeSpan IntervalToResendCode { get; } = TimeSpan.FromMilliseconds(120000);
 
-    public Timer MyTimer { get; set; }
+    public Timer MyTimer { get; set; } = default!;
+
+    [Inject]
+    private ILogger<InfoUser> logger { get; set; } = default!;
 
     public DateTime StartTimeSend{ get; set; }
 
@@ -283,7 +286,7 @@
         navigationManager.NavigateTo(redirectUrl, true);
     }
 
-    private async Task<string> CaptureFile()
+    private async Task<string?> CaptureFile()
     {
         if (model.File == null)
         {
@@ -329,7 +332,7 @@
     private async Task OnValidRegister(EditContext context)
     {
         isLoading = true;
-        string urlToFile = null;
+        string? urlToFile = null;
 
         var model = (RegisterModel)context.Model;
         if (model.File != null)
@@ -353,19 +356,25 @@
 
         try
         {
+            if (userViewModel.UserName is null)
+                throw new NullReferenceException("userViewModel.UserName is null");
+
+            if (model.UserEmail is null) 
+                throw new NullReferenceException("model.UserEmail is null");
+
             if (await usersService.IsExistNameUserInDB(userViewModel.UserName))
-            {
                 throw new Exception("Your Username is already taken, try another");
-            }
 
             if (await usersService.IsExistEmailUserInDB(model.UserEmail))
-            {
                 throw new Exception("Your Email is already taken, try another");
-            }
 
             isConfirmation = true;
             Reloading = true;
             await SendCode();
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -378,6 +387,9 @@
     {
         try
         {
+            if (userViewModel.FullUserInfo is null || userViewModel.FullUserInfo.UserEmail is null || userViewModel.UserName is null)
+                throw new NullReferenceException("userViewModel.FullUserInfo, userViewModel.FullUserInfo.UserEmail, userViewModel.UserNam are null");
+
             StartTimeSend = DateTime.Now;
             TimerForShowing = new();
             MyTimer.Start();
@@ -389,6 +401,10 @@
             await emailSender.SendEmailAsync(userViewModel.FullUserInfo.UserEmail, userViewModel.UserName, htmlMessage);
 
             Reloading = true;
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -412,10 +428,19 @@
 
     private async Task CheckCode()
     {
+        if (userViewModel.FullUserInfo is null)
+        {
+            logger.LogWarning("userViewModel.FullUserInfo is null");
+            return;
+        }
+
         if (string.Compare(CodeToConfirm, ConfirmCode, StringComparison.Ordinal) == 0)
         {
             userViewModel.FullUserInfo.ConfirmEmail = true;
-            var result = await usersService.PostUser(userViewModel);
+            var result = await usersService.PostUser(userViewModel) ?? throw new NullReferenceException("result is null after posting user");
+
+            if (string.IsNullOrEmpty(result.UserName))
+                throw new NullReferenceException("result.UserName is null or empty");
 
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
                 {

@@ -4,7 +4,7 @@ namespace IcantHumor.Services.Interfaces
 {
     public interface IDiscordAPIService
     {
-        Task<TokenResponseDiscordOAuth> GetTokenAsync(string authorizationCode);
-        Task<UserInfoDiscordAPI> GetUserInfoAsync(string accessToken);
+        Task<TokenResponseDiscordOAuth?> GetTokenAsync(string authorizationCode);
+        Task<UserInfoDiscordAPI?> GetUserInfoAsync(string accessToken);
     }
 }

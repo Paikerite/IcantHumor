@@ -2,7 +2,7 @@
 {
     public class OAuthDiscordConfig
     {
-        public string AppId { get; set; }
-        public string AppSecret { get; set; }
+        public required string AppId { get; set; }
+        public required string AppSecret { get; set; }
     }
 }

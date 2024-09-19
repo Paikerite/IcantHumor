@@ -15,12 +15,12 @@ namespace IcantHumor.Data
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {                  
+                Subject = new ClaimsIdentity(
+                [
                     new Claim(ClaimTypes.Name, userSession.UserName),
                     new Claim(ClaimTypes.Role, userSession.Role.ToString()),
                     new Claim(ClaimTypes.Sid, userSession.Id.ToString()),
-                }, "jwt"),
+                ], "jwt"),
                 Issuer = "http://BIGBOSS.com",
                 Audience = "http://SOLIDUS.com",
                 Expires = isRemember is true ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMinutes(5),

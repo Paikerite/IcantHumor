@@ -6,7 +6,7 @@
 <MudContainer>
     <MudGrid>
         <MudItem xs="12" sm="7" md="8">
-            @if (FavouritesMemes == null)
+            @if (FavouritesMemes is null)
             {
                 <MudCard>
                     <MudCardContent>
@@ -36,7 +36,7 @@
                         @if (item.TypeOfFile is TypeOfFile.Video)
                         {
                             <BlazoredVideo class="w-100 rounded-lg"
-                                            style="width:720px;"
+                                            style="width:100%;"
                                             controls="controls"
                                             loop="loop">
                                 <source src="@item.UrlToFile" type="video/mp4" />
@@ -127,6 +127,9 @@
 
     private IEnumerable<FavouriteViewModel> FavouritesMemes { get; set; } = default!;
 
+    [Inject]
+    private ILogger<Favourites> logger { get; set; } = default!;
+
     // MudListItem<FavouriteViewModel> selectedItem;
 
     private Guid chosenFavMeme { get; set; }
@@ -138,12 +141,23 @@
         try
         {
             var authState = await authenticationState;
-            user = await usersService.GetUserByName(authState.User.Identity.Name);
-            FavouritesMemes = await favouritesService.GetFavouritesByUser(user.Id);
+            if (authState is null || authState.User.Identity is null || authState.User.Identity.Name is null)
+            {
+                throw new NullReferenceException("favourites: authState is null");
+            }
+            user = await usersService.GetUserByName(authState.User.Identity.Name) 
+                ?? throw new NullReferenceException("favourites: user is null");
+            FavouritesMemes = await favouritesService.GetFavouritesByUser(user.Id) 
+                ?? throw new NullReferenceException("favourites: favouriteMemes is null");
+
             if (FavouritesMemes.Count()>0)
             {
                 chosenFavMeme = FavouritesMemes.First().Id;
             }
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {

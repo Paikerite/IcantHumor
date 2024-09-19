@@ -21,7 +21,7 @@ namespace IcantHumor.Services
             this.oauthOptions = oauthOptions;
         }
 
-        public async Task<TokenResponseGoogleOAuth> GetTokenAsync(string authorizationCode)
+        public async Task<TokenResponseGoogleOAuth?> GetTokenAsync(string authorizationCode)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token");
 
@@ -49,7 +49,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<UserInfoGoogleAPI> GetUserInfoAsync(string accessToken)
+        public async Task<UserInfoGoogleAPI?> GetUserInfoAsync(string accessToken)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

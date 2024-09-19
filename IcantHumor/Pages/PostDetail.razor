@@ -7,7 +7,7 @@
         @if (media != null)
         {
             <MudItem xs="12">
-                @if (userOfUploader != null && userOfUploader.UserName == authState.User.Identity.Name)
+                @if (userOfUploader != null && userOfUploader.UserName == userName)
                 {
                     @if (isEditingTitle)
                     {
@@ -42,7 +42,7 @@
                     <MudToolBar Class="d-flex justify-space-between">
                         <AuthorizeView>
                             <Authorized>
-                                @if (userOfUploader != null && userOfUploader.UserName == authState.User.Identity.Name || authState.User.IsInRole(Roles.Moderator.ToString()) || authState.User.IsInRole(Roles.BigBoss.ToString()))
+                                @if (userOfUploader != null && userOfUploader.UserName == userName || authState.User.IsInRole(Roles.Moderator.ToString()) || authState.User.IsInRole(Roles.BigBoss.ToString()))
                                 {
                                     <MudTooltip Text="Delete" Placement="Placement.Top">
                                         <MudIconButton Variant="Variant.Filled" @onclick="DeletePost" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" />
@@ -50,8 +50,8 @@
                                 }
                                 <MudTooltip Text=@(isFavourite ? "Added to Favourite" : "Add to Favourite" ) Placement="Placement.Top">
                                     <MudToggleIconButton Variant="Variant.Filled" Toggled="@isFavourite" Color="Color.Primary" ToggledChanged="AddPostToFavorite" ToggledColor="Color.Primary"
-                                                         Icon="@Icons.Material.Filled.FavoriteBorder" Title="Off" aria-label="favourite"
-                                                         ToggledIcon="@Icons.Material.Filled.Favorite" ToggledTitle="On" />
+                                                         Icon="@Icons.Material.Filled.FavoriteBorder" title="Off" aria-label="favourite"
+                                                         ToggledIcon="@Icons.Material.Filled.Favorite" />
                                 </MudTooltip>
                             </Authorized>
                         </AuthorizeView>
@@ -121,9 +121,13 @@
                                         {
                                             <MudImage ObjectFit="ObjectFit.Cover" Src="@userOfUploader.ProfilePicture"></MudImage>
                                         }
-                                        else
+                                        else if (userOfUploader.UserName is not null)
                                         {
                                             @userOfUploader.UserName[0]
+                                        }
+                                        else
+                                        {
+                                            <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                                         }
                                     </MudAvatar>
                                     @userOfUploader.UserName
@@ -160,40 +164,43 @@
     public Guid PostID { get; set; }
 
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
     [Inject]
-    private IDialogService DialogService { get; set; }
+    private IDialogService DialogService { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IMediaFilesService mediaFilesService { get; set; }
+    private IMediaFilesService mediaFilesService { get; set; } = default!;
 
     [Inject]
-    private IFavouritesService favouritesService { get; set; }
+    private IFavouritesService favouritesService { get; set; } = default!;
 
     [Inject]
-    private ICategoriesService categoriesService { get; set; }
+    private ICategoriesService categoriesService { get; set; } = default!;
 
     [Inject]
-    private IReactedUserService reactedUserService { get; set; }
+    private IReactedUserService reactedUserService { get; set; } = default!;
 
     [Inject]
-    private IJSRuntime JS { get; set; }
+    private IJSRuntime JS { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private ISnackbar snackbar { get; set; }
+    private ISnackbar snackbar { get; set; } = default!;
 
-    private AuthenticationState authState { get; set; }
+    [Inject]
+    private ILogger<MainLayout> logger { get; set; } = default!;
 
-    private MediaViewModel media { get; set; }
+    private AuthenticationState authState { get; set; } = default!;
 
-    private UserViewModel userOfUploader { get; set; }
+    private MediaViewModel media { get; set; } = default!;
+
+    private UserViewModel userOfUploader { get; set; } = default!;
 
     private bool isEditingTitle { get; set; } = false;
 
@@ -201,7 +208,9 @@
 
     private bool isCopied { get; set; }
 
-    private string UpdatedTitle { get; set; }
+    private string UpdatedTitle { get; set; } = default!;
+
+    private string userName { get; set; } = default!;
 
     private void EditTitleStatus() => isEditingTitle = !isEditingTitle;
 
@@ -210,20 +219,32 @@
         try
         {
             authState = await authenticationState;
-            var userName = authState.User.Identity.Name;
-            media = await mediaFilesService.GetMediaViewModel(PostID);
+
+            userName = authState.User.Identity?.Name
+                ?? throw new NullReferenceException("userName is null after access authState identity");
+
+            media = await mediaFilesService.GetMediaViewModel(PostID)
+                ?? throw new NullReferenceException("media is null after request");
+
             if (media != null)
             {
-                userOfUploader = await usersService.GetUser(media.IdOfCreator);
+                userOfUploader = await usersService.GetUser(media.IdOfCreator)
+                    ?? throw new NullReferenceException("userOfUploader is null after request");
 
                 if (userName != null)
                 {
-                    var usersFavorites = await usersService.GetUserByName(userName, true);
+                    var usersFavorites = await usersService.GetUserByName(userName, true)
+                        ?? throw new NullReferenceException("usersFavorites is null after request");
+
                     isFavourite = usersFavorites.Favourites.Any(a => a.IdPost == PostID);
                 }
 
                 UpdatedTitle = media.Title;
             }
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -235,9 +256,11 @@
     {
         try
         {
-            if (authState.User.Identity.IsAuthenticated)
+
+            if (authState.User.Identity is not null && authState.User.Identity.IsAuthenticated)
             {
-                var user = await usersService.GetUserByName(authState.User.Identity.Name);
+                var user = await usersService.GetUserByName(userName) 
+                    ?? throw new NullReferenceException("user is null after response");
                 //var post = await mediaFilesService.GetMediaViewModel(guidPost);
                 if (!media.WhoReacted.Any(w => w.IdReactedUser == user.Id))
                 {
@@ -245,14 +268,16 @@
                         {
                             IdReactedUser = user.Id,
                             ChosenReact = reaction,
-                        });
+                        })
+                        ?? throw new NullReferenceException("changePost is null after request");
 
                     media.WhoReacted = changePost.WhoReacted;
                 }
                 else
                 {
                     var whoReacted = media.WhoReacted.First(w => w.IdReactedUser == user.Id);
-                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
+                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id)
+                        ?? throw new NullReferenceException("react is null after request");
 
                     media.WhoReacted
                         .Remove(media.WhoReacted.First(a => a.Id == whoReacted.Id));
@@ -262,7 +287,8 @@
                             {
                                 IdReactedUser = user.Id,
                                 ChosenReact = reaction,
-                            });
+                            })
+                            ?? throw new NullReferenceException("change is null after request");
 
                         media.WhoReacted = changePost.WhoReacted;
                     }
@@ -273,6 +299,10 @@
             {
                 navigationManager.NavigateTo("/SignUser", true);
             }
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -310,34 +340,46 @@
 
     private async Task AddPostToFavorite()
     {
-        if (isFavourite)
+        try
         {
-            var usersFavorites = await usersService.GetUserByName(authState.User.Identity.Name);
-            usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
-            var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
-            if (fav != null)
+            var usersFavorites = await usersService.GetUserByName(userName)
+                ?? throw new NullReferenceException("usersFavorites is null after getbyname");
+            usersFavorites = await usersService.GetUser(usersFavorites.Id, true)
+                ?? throw new NullReferenceException("usersFavorites is null after get");
+
+            if (isFavourite)
             {
-                usersFavorites.Favourites.Remove(fav);
-                await usersService.PutUser(usersFavorites.Id, usersFavorites);
-                await favouritesService.DeleteFavourite(fav.Id);
-                isFavourite = false;
+                var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
+                if (fav != null)
+                {
+                    usersFavorites.Favourites.Remove(fav);
+                    await usersService.PutUser(usersFavorites.Id, usersFavorites);
+                    await favouritesService.DeleteFavourite(fav.Id);
+                    isFavourite = false;
+                }
+            }
+            else
+            {
+                var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
+                if (fav == null)
+                {
+                    usersFavorites.Favourites.Add(new FavouriteViewModel
+                        {
+                            IdReactedUser = usersFavorites.Id,
+                            IdPost = media.Id,
+                        });
+                    await usersService.PutUser(usersFavorites.Id, usersFavorites);
+                    isFavourite = true;
+                }
             }
         }
-        else
+        catch (NullReferenceException e)
         {
-            var usersFavorites = await usersService.GetUserByName(authState.User.Identity.Name);
-            usersFavorites = await usersService.GetUser(usersFavorites.Id, true);
-            var fav = usersFavorites.Favourites.FirstOrDefault(xd => xd.IdPost == PostID);
-            if (fav == null)
-            {
-                usersFavorites.Favourites.Add(new FavouriteViewModel
-                    {
-                        IdReactedUser = usersFavorites.Id,
-                        IdPost = media.Id,
-                    });
-                await usersService.PutUser(usersFavorites.Id, usersFavorites);
-                isFavourite = true;
-            }
+            logger.LogWarning(e.Message);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
         }
 
     }
@@ -360,7 +402,7 @@
         var dialog = await DialogService.ShowAsync<DialogConfirm>("Delete", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             var delepost = await mediaFilesService.DeleteMediaViewModel(PostID);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.UrlToFile);

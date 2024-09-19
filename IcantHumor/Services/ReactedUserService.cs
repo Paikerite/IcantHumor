@@ -13,7 +13,7 @@ namespace IcantHumor.Services
             this.httpClient = httpClient;
         }
 
-        public async Task<ReactedUserViewModel> DeleteReactedUser(Guid id)
+        public async Task<ReactedUserViewModel?> DeleteReactedUser(Guid id)
         {
             var response = await httpClient.DeleteAsync($"api/ReactedUser/{id}");
             if (response.IsSuccessStatusCode)
@@ -23,7 +23,7 @@ namespace IcantHumor.Services
             return default(ReactedUserViewModel);
         }
 
-        public async Task<ReactedUserViewModel> GetReactedUser(Guid id)
+        public async Task<ReactedUserViewModel?> GetReactedUser(Guid id)
         {
             var response = await this.httpClient.GetAsync($"api/ReactedUser/{id}");
             if (response.IsSuccessStatusCode)
@@ -41,7 +41,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<ReactedUserViewModel>> GetReactedUsers()
+        public async Task<IEnumerable<ReactedUserViewModel>?> GetReactedUsers()
         {
             var products = await this.httpClient.GetAsync("api/ReactedUser");
             if (products.IsSuccessStatusCode)
@@ -59,7 +59,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<ReactedUserViewModel> PostReactedUser(ReactedUserViewModel reactedUserViewModel)
+        public async Task<ReactedUserViewModel?> PostReactedUser(ReactedUserViewModel reactedUserViewModel)
         {
             var response = await httpClient.PostAsJsonAsync<ReactedUserViewModel>("api/ReactedUser", reactedUserViewModel);
             if (response.IsSuccessStatusCode)
@@ -78,7 +78,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<ReactedUserViewModel> PutReactedUser(Guid id, ReactedUserViewModel reactedUserViewModel)
+        public async Task<ReactedUserViewModel?> PutReactedUser(Guid id, ReactedUserViewModel reactedUserViewModel)
         {
             var JsonRequest = JsonConvert.SerializeObject(reactedUserViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");

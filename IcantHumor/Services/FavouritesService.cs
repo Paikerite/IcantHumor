@@ -16,7 +16,7 @@ namespace IcantHumor.Services
             this.httpClient = httpClient;
         }
 
-        public async Task<FavouriteViewModel> DeleteFavourite(Guid id)
+        public async Task<FavouriteViewModel?> DeleteFavourite(Guid id)
         {
             var response = await httpClient.DeleteAsync($"api/Favourites/{id}");
             if (response.IsSuccessStatusCode)
@@ -26,7 +26,7 @@ namespace IcantHumor.Services
             return default(FavouriteViewModel);
         }
 
-        public async Task<IEnumerable<FavouriteViewModel>> GetFavourites()
+        public async Task<IEnumerable<FavouriteViewModel>?> GetFavourites()
         {
             var products = await this.httpClient.GetAsync("api/Favourites");
             if (products.IsSuccessStatusCode)
@@ -44,7 +44,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<FavouriteViewModel> GetFavourite(Guid id)
+        public async Task<FavouriteViewModel?> GetFavourite(Guid id)
         {
             var response = await this.httpClient.GetAsync($"api/Favourites/{id}");
             if (response.IsSuccessStatusCode)
@@ -62,7 +62,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<FavouriteViewModel> PostFavourite(FavouriteViewModel favouriteViewModel)
+        public async Task<FavouriteViewModel?> PostFavourite(FavouriteViewModel favouriteViewModel)
         {
             var response = await httpClient.PostAsJsonAsync<FavouriteViewModel>("api/Favourites", favouriteViewModel);
             if (response.IsSuccessStatusCode)
@@ -80,7 +80,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<FavouriteViewModel> PutFavourite(Guid id, FavouriteViewModel favouriteViewModel)
+        public async Task<FavouriteViewModel?> PutFavourite(Guid id, FavouriteViewModel favouriteViewModel)
         {
             var JsonRequest = JsonConvert.SerializeObject(favouriteViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");
@@ -102,7 +102,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<FavouriteViewModel>> GetFavouritesByUser(Guid idUser)
+        public async Task<IEnumerable<FavouriteViewModel>?> GetFavouritesByUser(Guid idUser)
         {
             var products = await this.httpClient.GetAsync($"api/Favourites/GetFavouritesByUser/{idUser}");
             if (products.IsSuccessStatusCode)
@@ -120,7 +120,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<FavouriteViewModel>> GetCountFavouritesByUser(Guid idUser, int countFav)
+        public async Task<IEnumerable<FavouriteViewModel>?> GetCountFavouritesByUser(Guid idUser, int countFav)
         {
             var products = await this.httpClient.GetAsync($"api/Favourites/GetCountFavouritesByUser/{idUser}/{countFav}");
             if (products.IsSuccessStatusCode)

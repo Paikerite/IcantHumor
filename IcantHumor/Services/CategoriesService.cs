@@ -13,7 +13,7 @@ namespace IcantHumor.Services
             this.httpClient = httpClient;
         }
 
-        public async Task<CategoryViewModel> DeleteCategory(Guid id)
+        public async Task<CategoryViewModel?> DeleteCategory(Guid id)
         {
             var response = await httpClient.DeleteAsync($"api/Categories/{id}");
             if (response.IsSuccessStatusCode)
@@ -23,7 +23,7 @@ namespace IcantHumor.Services
             return default(CategoryViewModel);
         }
 
-        public async Task<IEnumerable<CategoryViewModel>> GetCategories()
+        public async Task<IEnumerable<CategoryViewModel>?> GetCategories()
         {
             var products = await this.httpClient.GetAsync("api/Categories");
             if (products.IsSuccessStatusCode)
@@ -41,7 +41,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<IEnumerable<CategoryViewModel>> GetCategoriesByName(string SearchText)
+        public async Task<IEnumerable<CategoryViewModel>?> GetCategoriesByName(string SearchText)
         {
             var products = await this.httpClient.GetAsync($"api/Categories/GetCategoriesByName/{SearchText}");
             if (products.IsSuccessStatusCode)
@@ -59,7 +59,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<CategoryViewModel> GetCategory(Guid id)
+        public async Task<CategoryViewModel?> GetCategory(Guid id)
         {
             var response = await this.httpClient.GetAsync($"api/Categories/{id}");
             if (response.IsSuccessStatusCode)
@@ -77,7 +77,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<CategoryViewModel> GetCategoryByName(string name)
+        public async Task<CategoryViewModel?> GetCategoryByName(string name)
         {
             var response = await this.httpClient.GetAsync($"api/Categories/GetCategoryByName/{name}");
             if (response.IsSuccessStatusCode)
@@ -95,7 +95,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<CategoryViewModel> PostCategory(CategoryViewModel categoryViewModel)
+        public async Task<CategoryViewModel?> PostCategory(CategoryViewModel categoryViewModel)
         {
             var response = await httpClient.PostAsJsonAsync<CategoryViewModel>("api/Categories", categoryViewModel);
             if (response.IsSuccessStatusCode)
@@ -114,7 +114,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<CategoryViewModel> PutCategory(Guid id, CategoryViewModel categoryViewModel)
+        public async Task<CategoryViewModel?> PutCategory(Guid id, CategoryViewModel categoryViewModel)
         {
             var JsonRequest = JsonConvert.SerializeObject(categoryViewModel);
             var content = new StringContent(JsonRequest, Encoding.UTF8, "application/json-patch+json");

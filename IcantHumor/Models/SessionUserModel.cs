@@ -6,6 +6,6 @@ namespace IcantHumor.Models
     {
         public Guid Id { get; set; }
         public Roles Role { get; set; }
-        public string UserName { get; set; }
+        public required string UserName { get; set; }
     }
 }

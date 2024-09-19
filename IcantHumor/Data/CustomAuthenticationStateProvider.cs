@@ -1,15 +1,8 @@
-﻿using IcantHumor.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
-using NuGet.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Security.Principal;
-using System.Text.Json;
 
 namespace IcantHumor.Data
 {
@@ -27,7 +20,7 @@ namespace IcantHumor.Data
         {
             var JwtTokenResult = await _localStorage.GetAsync<string>("ICANTHUMOR512");
 
-            string JwtToken = JwtTokenResult.Success ? JwtTokenResult.Value : null;
+            string? JwtToken = JwtTokenResult.Success ? JwtTokenResult.Value : default;
 
             var identity = new ClaimsIdentity();
             _http.DefaultRequestHeaders.Authorization = null;
@@ -36,7 +29,7 @@ namespace IcantHumor.Data
             {
                 //JwtToken = JwtToken.Replace("\"", "");
                 var tokenHandler = new JwtSecurityTokenHandler();
-                JwtSecurityToken securityToken;
+                JwtSecurityToken? securityToken;
                 if (tokenHandler.CanReadToken(JwtToken))
                 {
                     if (GenerationTokenJWT.ValidateCurrentToken(JwtToken))
@@ -55,11 +48,11 @@ namespace IcantHumor.Data
                     return new AuthenticationState(new ClaimsPrincipal(identity));
                 }
 
-                List<Claim> claims = securityToken.Claims.ToList();
+                List<Claim> claims = securityToken?.Claims.ToList() ?? throw new NullReferenceException("securityToken is null after reading token as jwtsecurityTOken");
 
                 claims.AddRange(new List<Claim>{
-                        new Claim(ClaimTypes.Name, claims.FirstOrDefault(key => key.Type == "unique_name").Value),
-                        new Claim(ClaimTypes.Role, claims.FirstOrDefault(key => key.Type == "role").Value)
+                        new Claim(ClaimTypes.Name, claims.FirstOrDefault(key => key.Type == "unique_name")?.Value ?? throw new NullReferenceException("unique_name is null")),
+                        new Claim(ClaimTypes.Role, claims.FirstOrDefault(key => key.Type == "role")?.Value ?? throw new NullReferenceException("role is null"))
                 });
 
                 identity = new ClaimsIdentity(claims, "jwt");

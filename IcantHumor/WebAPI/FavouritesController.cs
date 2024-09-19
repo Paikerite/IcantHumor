@@ -60,6 +60,7 @@ namespace IcantHumor.WebAPI
             var favouriteViewModel = await _context.Favourites
                 .Include(b => b.FavMedia)
                 .Where(a => a.IdReactedUser == idUser)
+                .OrderByDescending(c=>c.FavMedia.DateUpload)
                 .ToListAsync();
 
             if (favouriteViewModel == null)

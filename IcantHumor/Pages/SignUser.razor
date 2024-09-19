@@ -30,13 +30,13 @@
                             <MudText Typo="Typo.h4" Color="Color.Primary" Align="Align.Start"><b>Login</b></MudText>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Login" Variant="Variant.Filled" DisableUnderLine="true" @bind-Value="model.UserName" For="@(() => model.UserName)" />
+                            <MudTextField Label="Login" Variant="Variant.Filled" Underline="false" @bind-Value="model.UserName" For="@(() => model.UserName)" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField Label="Password" Variant="Variant.Filled" DisableUnderLine="true" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                            <MudTextField Label="Password" Variant="Variant.Filled" Underline="false" Class="mt-3" @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Checked="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
+                            <MudCheckBox Color="Color.Primary" Label="Remember me?" @bind-Value="model.Remember" For="@(() => model.Remember)"></MudCheckBox>
                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
@@ -48,7 +48,7 @@
                     else
                     {
                         <MudButton Href="/RegisterUser" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" @onmouseover="OnButtonPreventLogin" Style="@LoginButtonStyle" Class="ml-auto">@( TrollMode ? "Nope" : "Login" )</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" @onmouseover="OnButtonPreventLogin" Style="@LoginButtonStyle" Class="ml-auto">@(TrollMode ? "Nope" : "Login")</MudButton>
                     }
                 </MudCardActions>
             </MudCard>
@@ -58,33 +58,36 @@
 
 @code {
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    private AuthenticationStateProvider authenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; }
+    private IOptions<OAuthGoogleConfig> GoogleApiConfig { get; set; } = default!;
 
     [Inject]
-    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; }
+    private IOptions<OAuthDiscordConfig> DiscordApiConfig { get; set; } = default!;
+
+    [Inject]
+    private ILogger<SignUser> logger { get; set; } = default!;
 
     private class LoginModel
     {
         [Required]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
         [Required]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
         public bool Remember { get; set; } = true;
     }
 
@@ -120,39 +123,53 @@
 
         isLoading = true;
 
-        var result = await usersService.GetUserByName(model.UserName);
-
-        if (result != null)
+        if (model is null || model.UserName is null)
         {
-            result = await usersService.GetUser(result.Id, true);
-            if (result.FullUserInfo != null && result.FullUserInfo.Password == model.Password)
-            {
-                try
-                {
-                    var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
-                        {
-                            Id = result.Id,
-                            Role = result.Role,
-                            UserName = result.UserName,
-                        }, model.Remember);
-                    await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
-                    await authenticationStateProvider.GetAuthenticationStateAsync();
-                    navigationManager.NavigateTo("/", true);
-                }
-
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
-                }
-            }
-            else
-            {
-                Snackbar.Add("Wrong password or login", Severity.Error);
-            }
+            Snackbar.Add("Something went wrong while getting answer from server, try again", Severity.Error);
+            isLoading = false;
+            return;
         }
-        else
+
+        var result = await usersService.GetUserByName(model.UserName);
+        if (result is null)
+        {
+            Snackbar.Add("Something went wrong while request, try again", Severity.Error);
+            isLoading = false;
+            return;
+        }
+
+        result = await usersService.GetUser(result.Id, true);
+
+        if (result is null || result.UserName is null)
+        {
+            Snackbar.Add("Something went wrong while getting answer from server, try again", Severity.Error);
+            isLoading = false;
+            return;
+        }
+
+        if (result.FullUserInfo is null || result.FullUserInfo.Password != model.Password)
         {
             Snackbar.Add("Wrong password or login", Severity.Error);
+            isLoading = false;
+            return;
+        }
+
+        try
+        {
+            var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
+                {
+                    Id = result.Id,
+                    Role = result.Role,
+                    UserName = result.UserName,
+                }, model.Remember);
+            await LocalStorage.SetAsync("ICANTHUMOR512", JWTToken);
+            await authenticationStateProvider.GetAuthenticationStateAsync();
+            navigationManager.NavigateTo("/", true);
+        }
+
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
 
         isLoading = false;
@@ -160,6 +177,12 @@
 
     private void OnButtonPreventLogin()
     {
+        if (EditContext is null)
+        {
+            logger.LogError("EditContext is null");
+            return;
+        }
+
         TrollMode = EditContext.Validate() ? false : true;
         EnableTrollMode();
     }

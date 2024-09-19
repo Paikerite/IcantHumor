@@ -1,11 +1,7 @@
 ﻿using IcantHumor.Data;
 using IcantHumor.Models;
 using IcantHumor.Services.Interfaces;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace IcantHumor.Services
 {
@@ -17,16 +13,16 @@ namespace IcantHumor.Services
             _context = context;
         }
 
-        public async Task<UserViewModel> DeleteUser(Guid id)
+        public async Task<UserViewModel?> DeleteUser(Guid id)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
             var userViewModel = await _context.Users.FindAsync(id);
             if (userViewModel == null)
             {
-                return null;
+                return default;
             }
 
             _context.Users.Remove(userViewModel);
@@ -35,11 +31,11 @@ namespace IcantHumor.Services
             return userViewModel;
         }
 
-        public async Task<UserViewModel> GetUser(Guid id, bool FullInfo = false)
+        public async Task<UserViewModel?> GetUser(Guid id, bool FullInfo = false)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
 
             UserViewModel? userViewModel;
@@ -56,17 +52,17 @@ namespace IcantHumor.Services
 
             if (userViewModel == null)
             {
-                return null;
+                return default;
             }
 
             return userViewModel;
         }
 
-        public async Task<UserViewModel> ForbidUserAccess(Guid guid)
+        public async Task<UserViewModel?> ForbidUserAccess(Guid guid)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
 
             var user = await _context.Users.FindAsync(guid);
@@ -83,7 +79,7 @@ namespace IcantHumor.Services
             {
                 if (!UsersExists(guid))
                 {
-                    return null;
+                    return default;
                 }
                 else
                 {
@@ -94,11 +90,11 @@ namespace IcantHumor.Services
             return user;
         }
 
-        public async Task<UserViewModel> GetUserByName(string name, bool FullInfo = false)
+        public async Task<UserViewModel?> GetUserByName(string name, bool FullInfo = false)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
 
             UserViewModel? userViewModel;
@@ -115,17 +111,17 @@ namespace IcantHumor.Services
 
             if (userViewModel == null)
             {
-                return null;
+                return default;
             }
 
             return userViewModel;
         }
 
-        public async Task<IEnumerable<UserViewModel>> GetUsers()
+        public async Task<IEnumerable<UserViewModel>?> GetUsers()
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
             return await _context.Users.ToListAsync();
         }
@@ -144,11 +140,11 @@ namespace IcantHumor.Services
             return await _context.FullInfoUsers.AnyAsync(u=>u.UserEmail == email);
         }
 
-        public async Task<UserViewModel> PostUser(UserViewModel userViewModel)
+        public async Task<UserViewModel?> PostUser(UserViewModel userViewModel)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
             _context.Users.Add(userViewModel);
             await _context.SaveChangesAsync();
@@ -156,11 +152,11 @@ namespace IcantHumor.Services
             return await GetUser(userViewModel.Id);
         }
 
-        public async Task<UserViewModel> PutUser(Guid id, UserViewModel userViewModel)
+        public async Task<UserViewModel?> PutUser(Guid id, UserViewModel userViewModel)
         {
             if (id != userViewModel.Id)
             {
-                return null;
+                return default;
             }
 
             //_context.Entry(userViewModel).State = EntityState.Modified;
@@ -186,7 +182,7 @@ namespace IcantHumor.Services
             {
                 if (!UsersExists(id))
                 {
-                    return null;
+                    return default;
                 }
                 else
                 {
@@ -202,16 +198,17 @@ namespace IcantHumor.Services
             return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
         }
 
-        public async Task<UserViewModel> GetUserByEmail(string email, bool FullInfo = false)
+        public async Task<UserViewModel?> GetUserByEmail(string email, bool FullInfo = false)
         {
             if (_context.Users == null)
             {
-                return null;
+                return default;
             }
             UserViewModel? userViewModel;
 
             if (FullInfo)
             {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                 userViewModel = await _context.Users
                                       .Include(a=>a.FullUserInfo)
                                       .Include(u => u.Favourites)
@@ -222,10 +219,11 @@ namespace IcantHumor.Services
             {
                 userViewModel = await _context.Users.FirstOrDefaultAsync(u => u.FullUserInfo.UserEmail == email);
             }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
             if (userViewModel == null)
             {
-                return null;
+                return default;
             }
 
             return userViewModel;

@@ -2,6 +2,6 @@
 {
     public class UpdateTitleMediaFiles
     {
-        public string NewTitle { get; set; }
+        public required string NewTitle { get; set; }
     }
 }

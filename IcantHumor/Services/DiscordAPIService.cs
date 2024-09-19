@@ -20,7 +20,7 @@ namespace IcantHumor.Services
             this.oauthConfig = oauthConfig;
         }
 
-        public async Task<TokenResponseDiscordOAuth> GetTokenAsync(string authorizationCode)
+        public async Task<TokenResponseDiscordOAuth?> GetTokenAsync(string authorizationCode)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://discord.com/api/oauth2/token");
 
@@ -48,7 +48,7 @@ namespace IcantHumor.Services
             }
         }
 
-        public async Task<UserInfoDiscordAPI> GetUserInfoAsync(string accessToken)
+        public async Task<UserInfoDiscordAPI?> GetUserInfoAsync(string accessToken)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "https://discord.com/api/users/@me");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

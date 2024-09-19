@@ -23,24 +23,27 @@
 
 @code {
     [Inject]
-    private NavigationManager navigationManager { get; set; }
+    private NavigationManager navigationManager { get; set; } = default!;
 
     [Inject]
-    private IGoogleAPIService googleAPIService { get; set; }
+    private IGoogleAPIService googleAPIService { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private IUsersService usersService { get; set; }
+    private IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    private AuthenticationStateProvider authenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
-    public UserInfoGoogleAPI infouser { get; set; }
+    [Inject]
+    private ILogger<OAuthRedirectSuccessDiscord> logger { get; set; } = default!;
+
+    public UserInfoGoogleAPI infouser { get; set; } = default!;
 
     public bool IsSuccess { get; set; }
 
@@ -52,10 +55,21 @@
         {
             try
             {
-                var tokkenAccess = await googleAPIService.GetTokenAsync(authorizationCode);
-                infouser = await googleAPIService.GetUserInfoAsync(tokkenAccess.access_token);
-                if (!infouser.verified_email)
+                if (string.IsNullOrEmpty(authorizationCode)) throw new NullReferenceException("authorizationCode is broken, try login again");
+
+                var tokkenAccess = await googleAPIService.GetTokenAsync(authorizationCode) 
+                    ?? throw new NullReferenceException("response token is null, try login again");
+
+                if (tokkenAccess.access_token is null)
                 {
+                    throw new NullReferenceException("access token is null");
+                }
+
+                infouser = await googleAPIService.GetUserInfoAsync(tokkenAccess.access_token) 
+                    ?? throw new NullReferenceException("infouser discord is null, try login again");
+
+                if (!infouser.verified_email || string.IsNullOrEmpty(infouser.email))
+            {
                     throw new Exception("Your google email isn't verified. Confirm your email in your google account, then try again..");
                 }
 
@@ -68,6 +82,10 @@
                     await Register(infouser);
                 }
             }
+            catch (NullReferenceException e)
+            {
+                logger.LogWarning(e.Message);
+            }
             catch (Exception ex)
             {
                 Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
@@ -78,8 +96,13 @@
 
     private async Task SingIn(UserInfoGoogleAPI user)
     {
+        if (user.email is null || user.email == string.Empty)
+        {
+            throw new NullReferenceException("user email is empty or null");
+        }
+
         var result = await usersService.GetUserByEmail(user.email);
-        if (result != null)
+        if (result is not null && result.UserName is not null)
         {
             var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
                 {
@@ -114,7 +137,7 @@
             };
 
             var result = await usersService.PostUser(userViewModel);
-            if (result != null)
+            if (result is not null && result.UserName is not null)
             {
                 var JWTToken = GenerationTokenJWT.GenerateToken(new SessionUserModel
                     {

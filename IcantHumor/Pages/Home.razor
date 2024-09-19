@@ -220,6 +220,9 @@
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
+    [Inject]
+    private ILogger<MainLayout> logger { get; set; } = default!;
+
     private IEnumerable<MediaViewModel> memes { get; set; } = default!;
     private IEnumerable<CategoryViewModel> categories { get; set; } = default!;
     private IEnumerable<Guid> selectedCategoryGuidsByUrl { get; set; } = default!;
@@ -246,6 +249,8 @@
     public IReadOnlyCollection<Guid> selectedCategories = default!;
 
     private AuthenticationState authState { get; set; } = default!;
+
+    private System.Security.Principal.IIdentity identity { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -275,11 +280,19 @@
             await InitMediaFiles();
 
             isLoadingCategory = true;
-            categories = await categoriesService.GetCategories();
+            categories = await categoriesService.GetCategories() ?? throw new NullReferenceException("categories is null");
             isLoadingCategory = false;
 
             authState = await authenticationState;
-            user = await usersService.GetUserByName(authState.User.Identity.Name);
+            identity = authState.User.Identity ?? throw new NullReferenceException("identity is null");
+
+            if (identity.Name is null) throw new NullReferenceException("identity name is null");
+
+            user = await usersService.GetUserByName(identity.Name) ?? throw new NullReferenceException("User is null after request");
+        }
+        catch (NullReferenceException e)
+        {
+            logger.LogWarning(e.Message);
         }
         catch (Exception ex)
         {
@@ -291,23 +304,23 @@
     {
         try
         {
-            if (authState.User.Identity.IsAuthenticated)
+            if (identity.IsAuthenticated)
             {
-                var post = await mediaFilesService.GetMediaViewModel(guidPost);
+                var post = await mediaFilesService.GetMediaViewModel(guidPost) ?? throw new NullReferenceException("post is empty after response");
                 if (!post.WhoReacted.Any(w => w.IdReactedUser == user.Id))
                 {
                     var changePost = await mediaFilesService.MakeReactionInPost(post.Id, new ReactedUserViewModel
                         {
                             IdReactedUser = user.Id,
                             ChosenReact = reaction,
-                        });
+                        }) ?? throw new NullReferenceException("changePost is empty after put reaction");
 
                     memes.First(m => m.Id == guidPost).WhoReacted = changePost.WhoReacted;
                 }
                 else
                 {
                     var whoReacted = post.WhoReacted.First(w => w.IdReactedUser == user.Id);
-                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id);
+                    var react = await reactedUserService.DeleteReactedUser(whoReacted.Id) ?? throw new NullReferenceException("react is null, after deleted reaction");
 
                     memes.First(m => m.Id == guidPost).WhoReacted
                         .Remove(memes
@@ -319,7 +332,7 @@
                             {
                                 IdReactedUser = user.Id,
                                 ChosenReact = reaction,
-                            });
+                            }) ?? throw new NullReferenceException("changePost is null after made reaction");
 
                         memes.First(m => m.Id == guidPost).WhoReacted = changePost.WhoReacted;
                     }
@@ -333,7 +346,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Some shit happend in the server, try again later, info: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Some shit happend in the server, try again, info: {ex.Message}", Severity.Error);
         }
     }
 
@@ -351,11 +364,11 @@
         {
             if (!string.IsNullOrWhiteSpace(SearchCategory))
             {
-                categories = await categoriesService.GetCategoriesByName(SearchCategory);
+                categories = await categoriesService.GetCategoriesByName(SearchCategory) ?? throw new NullReferenceException("categories is null after request by name");
             }
             else
             {
-                categories = await categoriesService.GetCategories();
+                categories = await categoriesService.GetCategories() ?? throw new NullReferenceException("categories is null after request by name");
             }
         }
         catch (Exception ex)
@@ -379,7 +392,8 @@
             if (selectedCategories != null && selectedCategories.Count != 0)
             {
                 // var selectedCategr = selectedCategories.Select(ct => ct.Value);
-                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategories, SelectedSort);
+                memes = await mediaFilesService.GetCategorizedMediaPerPage(SelectedPage, ItemsPerPage, selectedCategories, SelectedSort)
+                    ?? throw new NullReferenceException("memes by Categorized is null after request by PerPage");
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesIncludeCategories(selectedCategories);
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
@@ -396,7 +410,8 @@
             }
             else if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage, SelectedSort);
+                memes = await mediaFilesService.GetMediaFilesByNameByPages(SearchText, SelectedPage, ItemsPerPage, SelectedSort)
+                    ?? throw new NullReferenceException("memes is null after request by ByNameByPages");
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFilesBySearch(SearchText);
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;
                 string uri = navigation.GetUriWithQueryParameters(
@@ -411,7 +426,8 @@
             }
             else
             {
-                memes = await mediaFilesService.GetMediaPerPage(SelectedPage, ItemsPerPage, SelectedSort);
+                memes = await mediaFilesService.GetMediaPerPage(SelectedPage, ItemsPerPage, SelectedSort)
+                    ?? throw new NullReferenceException("memes is null after request by ByNameByPages");
                 GeneralCountOfMemes = await mediaFilesService.GetCountMediaFiles();
 
                 CountPages = GeneralCountOfMemes / ItemsPerPage + 1;

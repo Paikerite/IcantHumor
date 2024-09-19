@@ -26,7 +26,7 @@
                 <MudMenu ActivationEvent="@MouseEvent.MouseOver">
                     <ActivatorContent>
                         <MudAvatar Class="me-3" Color="Color.Primary">
-                            @if (userViewModel == null)
+                            @if (userViewModel is null || userViewModel.UserName is null)
                             {
                                 <MudProgressCircular Color="Color.Secondary" Size="Size.Medium" Indeterminate="true" />
                             }
@@ -85,21 +85,23 @@
 
 @code {
     [Inject]
-    public NavigationManager navigationManager { get; set; }
+    public NavigationManager navigationManager { get; set; } = default!;
 
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationState { get; set; }
+    private Task<AuthenticationState> authenticationState { get; set; } = default!;
 
     [Inject]
-    public IUsersService usersService { get; set; }
+    public IUsersService usersService { get; set; } = default!;
 
     [Inject]
-    private ISnackbar Snackbar { get; set; }
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
-    private ProtectedLocalStorage LocalStorage { get; set; }
+    private ProtectedLocalStorage LocalStorage { get; set; } = default!;
 
-    public UserViewModel userViewModel { get; set; }
+    [Inject]
+    private ILogger<MainLayout> logger { get; set; } = default!;
+    public UserViewModel userViewModel { get; set; } = default!;
 
     MudTheme MyCustomTheme = new MudTheme()
         {
@@ -134,14 +136,15 @@
         try
         {
             var authState = await authenticationState;
-            if (authState.User.Identity.IsAuthenticated)
+            if (authState.User.Identity is not null && authState.User.Identity.IsAuthenticated && authState.User.Identity.Name is not null)
             {
-                userViewModel = await usersService.GetUserByName(authState.User.Identity.Name);
+                userViewModel = await usersService.GetUserByName(authState.User.Identity.Name) ?? throw new NullReferenceException("mainlayout: user is null");
                 // IsConfirmEmailCheck(userViewModel.Id);
             }
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.Message);
             Snackbar.Add($"Some shit happend in the server, info: {ex.Message}", Severity.Error);
         }
     }

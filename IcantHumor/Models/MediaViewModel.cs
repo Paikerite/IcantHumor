@@ -10,9 +10,9 @@ namespace IcantHumor.Models
         public Guid Id { get; set; }
         public Guid IdOfCreator { get; set; }
         [Required]
-        public string Title { get; set; }
+        public required string Title { get; set; }
         [Required]
-        public string UrlToFile { get; set; }
+        public required string UrlToFile { get; set; }
         //Like and Dislike is client-side attribute and cannot be used in entityFramework
         public int Like
         {
